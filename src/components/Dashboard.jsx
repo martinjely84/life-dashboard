@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import {
-  useStore, domainsSorted, domainCounts, firstOpenGoal,
-  pendingChats, addChat, deleteChat, moveChat,
+  useStore, domainsSorted, domainCounts, firstOpenGoal, moveChat, addDomain,
 } from '../lib/store'
-import { ChatModal, DomainModal } from './Modal'
-import { addDomain } from '../lib/store'
+import { DomainModal } from './Modal'
+import Today from './Today'
 
 function DomainCard({ def, onOpen }) {
   const s = useStore()
@@ -52,10 +51,8 @@ function DomainCard({ def, onOpen }) {
 
 export default function Dashboard({ onOpenDomain }) {
   const s = useStore()
-  const [adding, setAdding] = useState(false)
   const [newDomain, setNewDomain] = useState(false)
   const defs = domainsSorted(s)
-  const pending = pendingChats(s)
 
   return (
     <>
@@ -73,43 +70,7 @@ export default function Dashboard({ onOpenDomain }) {
         </button>
       </div>
 
-      <div className="phdr">
-        <div className="sl" style={{ flex: 1, marginBottom: 0 }}>
-          Pending inbox <span className="pbadge">{pending.length}</span>
-        </div>
-        <button className="btn-add" onClick={() => setAdding(true)}>＋ Add chat</button>
-      </div>
-
-      <div className="pgrid">
-        {pending.length ? pending.map((c) => (
-          <div
-            className="pcard"
-            key={c.id}
-            draggable
-            onDragStart={(e) => e.dataTransfer.setData('text/chat-id', c.id)}
-          >
-            <div className="pt">
-              <div className="ptitle">{c.title}</div>
-              <button className="pdel" onClick={() => deleteChat(c.id)} aria-label="Delete">✕</button>
-            </div>
-            {c.url && (
-              <div className="purl">
-                <a href={c.url} target="_blank" rel="noreferrer">open chat ↗</a>
-              </div>
-            )}
-            {c.meta && <div className="pmeta">{c.meta}</div>}
-            <div className="phint">drag onto a domain →</div>
-          </div>
-        )) : (
-          <div className="pempty">
-            No pending chats — hit ＋ Add chat above, then drag cards into a domain.
-          </div>
-        )}
-      </div>
-
-      {adding && (
-        <ChatModal onClose={() => setAdding(false)} onSubmit={(c) => addChat(c)} />
-      )}
+      <Today />
 
       {newDomain && (
         <DomainModal

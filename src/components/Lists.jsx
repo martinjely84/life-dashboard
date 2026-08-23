@@ -20,7 +20,7 @@ const COLUMNS = [
   { key: 'created_at', label: 'Created' },
 ]
 
-export default function Lists() {
+export default function Lists({ onOpen }) {
   const s = useStore()
   const [type, setType] = useState('goal')
   const [domain, setDomain] = useState('')
@@ -95,9 +95,11 @@ export default function Lists() {
             {rows.length ? rows.map((r) => {
               const meta = ITEM_TYPES[r.type] || ITEM_TYPES.goal
               return (
-                <tr key={r.id}>
+                <tr key={r.id} className="lst-row" onClick={() => onOpen?.(r)}
+                  title="Open where this lives">
                   <td>
                     <span className={r.done ? 'lst-done' : ''}>{r.text}</span>
+                    <span className="lst-go">open ↗</span>
                     {r.parentText && (
                       <div className="td-path" style={{ marginTop: 2 }}>under: {r.parentText}</div>
                     )}
@@ -113,7 +115,7 @@ export default function Lists() {
                     <button
                       className="gck"
                       style={r.done ? { background: '#7ec887', borderColor: '#7ec887', color: '#0d0f14' } : undefined}
-                      onClick={() => toggleItem(r.id)}
+                      onClick={(e) => { e.stopPropagation(); toggleItem(r.id) }}
                       aria-label={r.done ? 'Mark not done' : 'Mark done'}
                     >
                       {r.done ? '✓' : ''}

@@ -226,3 +226,20 @@ table.lst tr:hover td { background:var(--surf2) }
 /* New-domain tile */
 .dcard.dnew { border-style:dashed; display:flex; align-items:center; justify-content:center; min-height:118px; color:var(--dim); font-size:13px; font-weight:600; background:none }
 .dcard.dnew:hover { border-color:var(--acc); color:var(--acc) }
+
+/* Clickable list rows → jump to the item where it lives */
+table.lst tr.lst-row { cursor:pointer }
+.lst-go { font-family:var(--fm); font-size:10px; color:var(--acc); margin-left:8px; opacity:0; white-space:nowrap }
+table.lst tr.lst-row:hover .lst-go { opacity:1 }
+
+/* Focus highlight when arriving from a list */
+@keyframes focusPulse { 0% { box-shadow:0 0 0 2px var(--acc) } 100% { box-shadow:0 0 0 2px transparent } }
+.gi-wrap.focus { border-color:var(--acc); animation:focusPulse 2.4s ease-out 1 }
+.ai.focus { background:rgba(200,169,110,.12); border-radius:6px }
+
+/* TODAY — to-do list + daily habits */
+.today-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:12px; margin-bottom:3rem }
+.today-col { margin-bottom:0 }
+.today-col .sl::after { display:none }
+.today-col .sl { gap:8px }
+.streak { font-family:var(--fm); font-size:10px; color:#e8a87c; background:rgba(232,168,124,.12); padding:2px 7px; border-radius:20px; flex-shrink:0; margin-top:1px; white-space:nowrap }

@@ -117,3 +117,40 @@ begin
     end;
   end loop;
 end $$;
+-- ── TO-DO LIST & DAILY HABITS ──────────────────────────────
+create table if not exists todos (
+  id          uuid primary key default gen_random_uuid(),
+  text        text not null,
+  done        boolean default false,
+  sort_order  integer default 0,
+  created_at  timestamptz default now()
+);
+
+-- last_done holds the date the habit was last ticked, so the checkbox
+-- clears itself each new day while the streak survives.
+create table if not exists habits (
+  id          uuid primary key default gen_random_uuid(),
+  text        text not null,
+  last_done   date,
+  streak      integer default 0,
+  sort_order  integer default 0,
+  created_at  timestamptz default now()
+);
+
+alter table todos  enable row level security;
+alter table habits enable row level security;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['todos','habits'] loop
+    execute format('drop policy if exists %I on %I', t || '_all', t);
+    execute format(
+      'create policy %I on %I for all to anon, authenticated using (true) with check (true)',
+      t || '_all', t);
+    begin
+      execute format('alter publication supabase_realtime add table %I', t);
+    exception when duplicate_object then null;
+    end;
+  end loop;
+end $$;

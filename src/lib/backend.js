@@ -13,18 +13,22 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
 
 export const hasSupabase = Boolean(URL && KEY)
 
-export const TABLES = ['domains', 'folders', 'items', 'people', 'chats']
+export const TABLES = ['domains', 'folders', 'items', 'people', 'chats', 'todos', 'habits']
 
 const LOCAL_KEY = 'mld-v1'
 
 // ── LOCAL ────────────────────────────────────────────────────────────
 function localBackend() {
+  const empty = () => Object.fromEntries(TABLES.map((t) => [t, []]))
+
   const readAll = () => {
     try {
       const raw = localStorage.getItem(LOCAL_KEY)
-      if (raw) return JSON.parse(raw)
+      // Merge over the empty shape so a store written before a new table
+      // existed still comes back with that key present.
+      if (raw) return { ...empty(), ...JSON.parse(raw) }
     } catch { /* corrupt or unavailable — fall through to empty */ }
-    return Object.fromEntries(TABLES.map((t) => [t, []]))
+    return empty()
   }
 
   let db = readAll()

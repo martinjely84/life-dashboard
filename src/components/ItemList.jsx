@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ITEM_TYPES } from '../lib/seed'
 import {
   useStore, actionsOf, addAction, addItem, deleteItem, toggleItem, updateItemText,
@@ -24,9 +24,9 @@ function EditableText({ value, className, onCommit }) {
   )
 }
 
-function ActionRow({ action }) {
+function ActionRow({ action, focused }) {
   return (
-    <div className="ai">
+    <div className={`ai${focused ? ' focus' : ''}`}>
       <button
         className="ack"
         style={action.done ? { background: '#4ecdc4', borderColor: '#4ecdc4', color: '#0d0f14' } : undefined}
@@ -45,14 +45,26 @@ function ActionRow({ action }) {
   )
 }
 
-function ItemRow({ item, accent }) {
+function ItemRow({ item, accent, focusItemId }) {
   const s = useStore()
-  const [open, setOpen] = useState(false)
-  const [draft, setDraft] = useState('')
   const meta = ITEM_TYPES[item.type] || ITEM_TYPES.goal
   const isGoal = item.type === 'goal'
   const actions = isGoal ? actionsOf(s, item.id) : []
   const openActions = actions.filter((a) => !a.done).length
+
+  // Arriving from the Lists view: if the thing clicked was an action, open
+  // its parent goal so it is actually visible.
+  const hitsAction = actions.some((a) => a.id === focusItemId)
+  const focused = item.id === focusItemId || hitsAction
+
+  const [open, setOpen] = useState(hitsAction)
+  const [draft, setDraft] = useState('')
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!focused) return
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [focused])
 
   const submit = () => {
     const t = draft.trim()
@@ -62,7 +74,7 @@ function ItemRow({ item, accent }) {
   }
 
   return (
-    <div className="gi-wrap">
+    <div className={`gi-wrap${focused ? ' focus' : ''}`} ref={ref}>
       <div className="gi">
         <button
           className="gck"
@@ -95,7 +107,9 @@ function ItemRow({ item, accent }) {
 
       {isGoal && open && (
         <div className="alist">
-          {actions.map((a) => <ActionRow key={a.id} action={a} />)}
+          {actions.map((a) => (
+            <ActionRow key={a.id} action={a} focused={a.id === focusItemId} />
+          ))}
           {!actions.length && (
             <div style={{ fontSize: 11, color: 'var(--dim)', fontStyle: 'italic', padding: '4px 0' }}>
               No actions yet
@@ -116,7 +130,9 @@ function ItemRow({ item, accent }) {
   )
 }
 
-export default function ItemList({ items, folderId, accent = '#c8a96e', emptyText = 'Nothing here yet' }) {
+export default function ItemList({
+  items, folderId, accent = '#c8a96e', focusItemId = null, emptyText = 'Nothing here yet',
+}) {
   const [text, setText] = useState('')
   const [type, setType] = useState('goal')
 
@@ -131,7 +147,9 @@ export default function ItemList({ items, folderId, accent = '#c8a96e', emptyTex
     <>
       <div className="glist">
         {items.length
-          ? items.map((i) => <ItemRow key={i.id} item={i} accent={accent} />)
+          ? items.map((i) => (
+            <ItemRow key={i.id} item={i} accent={accent} focusItemId={focusItemId} />
+          ))
           : <div className="empty">{emptyText}</div>}
       </div>
 

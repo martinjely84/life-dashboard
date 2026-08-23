@@ -56,9 +56,9 @@ function buildRoot(s, domain, folderId) {
   return f ? folderNode(f) : null
 }
 
-export default function DomainView({ domainId, onBack, onOpenPerson }) {
+export default function DomainView({ domainId, onBack, onOpenPerson, initialFolderId = null, focusItemId = null }) {
   const s = useStore()
-  const [folderId, setFolderId] = useState(null)
+  const [folderId, setFolderId] = useState(initialFolderId)
   const [tab, setTab] = useState('items')
   const [modal, setModal] = useState(null) // new | rename | delete | editDomain | deleteDomain
 
@@ -175,6 +175,7 @@ export default function DomainView({ domainId, onBack, onOpenPerson }) {
             <div className="sl">Items</div>
             {folderId ? (
               <ItemList items={items} folderId={folderId} accent={domain.color}
+                focusItemId={folderId === initialFolderId ? focusItemId : null}
                 emptyText="No items in this folder yet" />
             ) : (
               <div className="empty">

@@ -9,7 +9,7 @@ import { DOMAINS, PEOPLE, PENDING, PERSON_GOALS, PERSON_CHATS } from './seed'
 const uid = () => crypto.randomUUID()
 
 let state = {
-  domains: [], folders: [], items: [], people: [], chats: [],
+  domains: [], folders: [], items: [], people: [], chats: [], todos: [], habits: [],
   status: 'loading', // loading | ready | error
   error: null,
 }
@@ -277,15 +277,129 @@ export function allItems(s, type) {
       const domain = s.domains.find((d) => d.id === folder?.domain_id)
       const path = folder ? folderPath(s, folder.id).map((f) => f.name) : []
       const parent = i.parent_item_id ? s.items.find((x) => x.id === i.parent_item_id) : null
+      // Items in a person folder belong to a Family person panel, not to a
+      // folder you can navigate to — the list links there instead.
+      const personId = folder && isPersonFolder(folder)
+        ? folder.name.replace('__person__', '')
+        : null
+      const person = personId ? s.people.find((p) => p.id === personId) : null
+
       return {
         ...i,
         domainName: domain?.name || '—',
         domainId: domain?.id || null,
         domainColor: domain?.color || '#7a7a8a',
-        folderPath: path.map((n) => (n.startsWith('__person__') ? n.replace('__person__', 'Person: ') : n)).join(' › '),
+        folderId: i.folder_id,
+        personId,
+        folderPath: personId
+          ? `Person: ${person?.name || personId}`
+          : path.join(' › '),
         parentText: parent?.text || null,
       }
     })
+}
+
+// ── TO-DO LIST ───────────────────────────────────────────────────────
+export const todosSorted = (s) => [...(s.todos || [])].sort(bySort)
+
+export function addTodo(text) {
+  const row = {
+    id: uid(), text, done: false,
+    sort_order: (state.todos || []).length, created_at: new Date().toISOString(),
+  }
+  state.todos = [...(state.todos || []), row]
+  emit()
+  persist(() => backend.insert('todos', [row]))
+}
+
+export function toggleTodo(id) {
+  const t = state.todos.find((x) => x.id === id)
+  if (!t) return
+  const done = !t.done
+  state.todos = state.todos.map((x) => (x.id === id ? { ...x, done } : x))
+  emit()
+  persist(() => backend.update('todos', id, { done }))
+}
+
+export function updateTodo(id, text) {
+  state.todos = state.todos.map((x) => (x.id === id ? { ...x, text } : x))
+  emit()
+  persist(() => backend.update('todos', id, { text }))
+}
+
+export function deleteTodo(id) {
+  state.todos = state.todos.filter((x) => x.id !== id)
+  emit()
+  persist(() => backend.remove('todos', id))
+}
+
+export function clearDoneTodos() {
+  const doomed = state.todos.filter((t) => t.done)
+  state.todos = state.todos.filter((t) => !t.done)
+  emit()
+  persist(() => removeAll(doomed.map((t) => ['todos', t.id])))
+}
+
+// ── DAILY HABITS ─────────────────────────────────────────────────────
+// A habit is "done" only if it was last ticked today, so every checkbox
+// clears itself overnight. The streak is what carries over.
+export const todayKey = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const yesterdayKey = () => {
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+export const habitsSorted = (s) => [...(s.habits || [])].sort(bySort)
+export const habitDoneToday = (h) => h.last_done === todayKey()
+
+export function addHabit(text) {
+  const row = {
+    id: uid(), text, last_done: null, streak: 0,
+    sort_order: (state.habits || []).length, created_at: new Date().toISOString(),
+  }
+  state.habits = [...(state.habits || []), row]
+  emit()
+  persist(() => backend.insert('habits', [row]))
+}
+
+export function toggleHabit(id) {
+  const h = state.habits.find((x) => x.id === id)
+  if (!h) return
+
+  let patch
+  if (habitDoneToday(h)) {
+    // Unticking today: step the streak back, and hand the "last done" back
+    // to yesterday if the streak survives, so the chain stays intact.
+    const streak = Math.max(0, (h.streak || 0) - 1)
+    patch = { last_done: streak > 0 ? yesterdayKey() : null, streak }
+  } else {
+    // Continuing yesterday's chain extends it; any other gap starts again.
+    const streak = h.last_done === yesterdayKey() ? (h.streak || 0) + 1 : 1
+    patch = { last_done: todayKey(), streak }
+  }
+
+  state.habits = state.habits.map((x) => (x.id === id ? { ...x, ...patch } : x))
+  emit()
+  persist(() => backend.update('habits', id, patch))
+}
+
+export function updateHabit(id, text) {
+  state.habits = state.habits.map((x) => (x.id === id ? { ...x, text } : x))
+  emit()
+  persist(() => backend.update('habits', id, { text }))
+}
+
+export function deleteHabit(id) {
+  state.habits = state.habits.filter((x) => x.id !== id)
+  emit()
+  persist(() => backend.remove('habits', id))
 }
 
 // ── MUTATIONS ────────────────────────────────────────────────────────

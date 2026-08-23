@@ -137,13 +137,29 @@ export default function App() {
           )}
           {view.name === 'domain' && (
             <DomainView
-              key={view.id}
+              key={`${view.id}:${view.folderId || ''}:${view.focusItemId || ''}`}
               domainId={view.id}
+              initialFolderId={view.folderId || null}
+              focusItemId={view.focusItemId || null}
               onBack={() => setView({ name: 'dashboard' })}
               onOpenPerson={setPerson}
             />
           )}
-          {view.name === 'lists' && <Lists />}
+          {view.name === 'lists' && (
+            <Lists
+              onOpen={(row) => {
+                // Person goals live in a hidden folder — open the person panel.
+                if (row.personId) { setPerson(row.personId); return }
+                if (!row.domainId || !row.folderId) return
+                setView({
+                  name: 'domain',
+                  id: row.domainId,
+                  folderId: row.folderId,
+                  focusItemId: row.id,
+                })
+              }}
+            />
+          )}
         </>
       )}
 
