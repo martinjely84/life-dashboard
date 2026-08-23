@@ -66,29 +66,26 @@ function FolderSection({ folder, domain, open, onToggle, onDrillIn, focusItemId 
 
   return (
     <div className={`accs${open ? ' on' : ''}`}>
-      <button className="accs-hd" onClick={onToggle} aria-expanded={open}>
-        <span className="accs-ch">{open ? '▾' : '▸'}</span>
-        <span className="accs-nm">{folder.name}</span>
-        <span className="accs-meta">
-          {subs.length > 0 && `${subs.length} folder${subs.length === 1 ? '' : 's'} · `}
-          {total} item{total === 1 ? '' : 's'}
-        </span>
-        {openCount > 0 && (
-          <span className="accs-open" style={{ background: `${domain.color}22`, color: domain.color }}>
-            {openCount} open
+      {/* Two sibling buttons, never nested: the whole row toggles, and only
+          the small "open" button on the end navigates. */}
+      <div className="accs-hd">
+        <button className="accs-toggle" onClick={onToggle} aria-expanded={open}>
+          <span className="accs-ch">{open ? '▾' : '▸'}</span>
+          <span className="accs-nm">{folder.name}</span>
+          <span className="accs-meta">
+            {subs.length > 0 && `${subs.length} folder${subs.length === 1 ? '' : 's'} · `}
+            {total} item{total === 1 ? '' : 's'}
           </span>
-        )}
-        <span
-          className="accs-go"
-          role="button"
-          tabIndex={0}
-          title="Open this folder"
-          onClick={(e) => { e.stopPropagation(); onDrillIn() }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onDrillIn() } }}
-        >
+          {openCount > 0 && (
+            <span className="accs-open" style={{ background: `${domain.color}22`, color: domain.color }}>
+              {openCount} open
+            </span>
+          )}
+        </button>
+        <button className="accs-go" title={`Open ${folder.name}`} onClick={onDrillIn}>
           open →
-        </span>
-      </button>
+        </button>
+      </div>
 
       {open && (
         <div className="accs-body">
