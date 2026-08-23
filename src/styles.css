@@ -239,3 +239,10 @@ table.lst tr.lst-row:hover .lst-go { opacity:1 }
 .accs-go:hover { color:var(--acc); border-color:var(--acc) }
 .accs-body { padding:4px 14px 14px; border-top:1px solid var(--bdr); background:var(--surf) }
 @media (max-width:520px) { .accs-meta { display:none } }
+
+/* Send-to buttons on item rows */
+.gi { flex-wrap:wrap }
+.to-todo { font-family:var(--fm); font-size:10px; white-space:nowrap; flex-shrink:0; padding:2px 6px; border-radius:6px; border:1px solid transparent }
+.to-todo:hover { color:var(--acc); border-color:var(--bdr) }
+.to-todo.sent { color:#7ec887 }
+.habit-pick { display:inline-flex; gap:2px; align-items:center; background:var(--bg); border:1px solid var(--bdrh); border-radius:8px; padding:2px }

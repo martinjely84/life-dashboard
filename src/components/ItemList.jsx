@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { ITEM_TYPES } from '../lib/seed'
 import {
-  useStore, actionsOf, addAction, addItem, deleteItem, toggleItem, updateItemText, addTodo,
+  useStore, actionsOf, addAction, addItem, deleteItem, toggleItem, updateItemText,
+  addTodo, addHabit, CADENCES,
 } from '../lib/store'
 
 // Copies an item's text onto the dashboard to-do list. Briefly confirms,
@@ -15,6 +16,44 @@ function SendToTodo({ text }) {
       onClick={() => { addTodo(text); setSent(true); setTimeout(() => setSent(false), 1600) }}
     >
       {sent ? '✓ added' : '＋ to-do'}
+    </button>
+  )
+}
+
+// Same idea as the to-do button, but a habit needs a cadence, so the button
+// opens into the three choices rather than guessing one.
+function SendToHabit({ text }) {
+  const [picking, setPicking] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  if (sent) return <span className="gdl to-todo sent">✓ habit</span>
+
+  if (picking) {
+    return (
+      <span className="habit-pick">
+        {Object.entries(CADENCES).map(([key, c]) => (
+          <button
+            key={key}
+            className="gdl to-todo"
+            title={`Add as a ${c.label.toLowerCase()} habit`}
+            onClick={() => {
+              addHabit(text, key)
+              setPicking(false)
+              setSent(true)
+              setTimeout(() => setSent(false), 1600)
+            }}
+          >
+            {c.label}
+          </button>
+        ))}
+        <button className="gdl" onClick={() => setPicking(false)} aria-label="Cancel">✕</button>
+      </span>
+    )
+  }
+
+  return (
+    <button className="gdl to-todo" title="Add to habits" onClick={() => setPicking(true)}>
+      ＋ habit
     </button>
   )
 }
@@ -56,6 +95,7 @@ function ActionRow({ action, focused }) {
         onCommit={(t) => updateItemText(action.id, t)}
       />
       <SendToTodo text={action.text} />
+      <SendToHabit text={action.text} />
       <button className="adl" onClick={() => deleteItem(action.id)} aria-label="Delete action">✕</button>
     </div>
   )
@@ -119,6 +159,7 @@ function ItemRow({ item, accent, focusItemId }) {
         )}
 
         <SendToTodo text={item.text} />
+        <SendToHabit text={item.text} />
         <button className="gdl" onClick={() => deleteItem(item.id)} aria-label="Delete item">✕</button>
       </div>
 
