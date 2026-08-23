@@ -1,9 +1,15 @@
+import { useEffect, useRef, useState } from 'react'
+
 // Generalised version of the old renderFamilyTree() / buildNode() pair:
 // same box-and-line look, but for an arbitrary-depth tree of any domain.
 //
 // Takes a nested { id, label, sub, color, kind, count, children } root and
 // lays it out top-down. Leaves get slots left-to-right; parents centre over
 // their children — the classic tidy-tree layout.
+
+// Below this the labels stop being readable, so a very wide tree keeps its
+// horizontal scrollbar rather than shrinking into illegibility.
+const MIN_SCALE = 0.6
 
 const NW = 152   // node width
 const NH = 58    // node height
@@ -116,14 +122,38 @@ function Node({ n, onSelect }) {
 }
 
 export default function Tree({ root, onSelect, maxDepth = 2 }) {
+  const wrapRef = useRef(null)
+  const [avail, setAvail] = useState(0)
+
+  // Watch the panel width so the tree can shrink to fit inside it.
+  useEffect(() => {
+    const el = wrapRef.current
+    if (!el) return undefined
+    setAvail(el.clientWidth)
+    const ro = new ResizeObserver(([entry]) => setAvail(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   if (!root) return null
   const { nodes, edges, width, height } = layout(root, maxDepth)
   const svgW = width + PAD * 2
   const svgH = height + PAD * 2 + 14
 
+  // Scale down to fit, but never past the point of being readable.
+  const scale = avail && svgW > avail ? Math.max(avail / svgW, MIN_SCALE) : 1
+  const dispW = Math.round(svgW * scale)
+  const dispH = Math.round(svgH * scale)
+
   return (
-    <div className="tree-scroll">
-      <svg width={svgW} height={svgH} style={{ minWidth: svgW }} xmlns="http://www.w3.org/2000/svg">
+    <div className="tree-scroll" ref={wrapRef}>
+      <svg
+        width={dispW}
+        height={dispH}
+        viewBox={`0 0 ${svgW} ${svgH}`}
+        style={{ minWidth: dispW }}
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <g transform={`translate(${PAD},${PAD})`}>
           {edges.map((e, i) => {
             const midY = e.from.y + NH + VGAP / 2

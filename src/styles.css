@@ -218,3 +218,7 @@ table.lst tr.lst-row:hover .lst-go { opacity:1 }
 .dc-arrow:disabled { opacity:.25; cursor:default }
 /* Touch screens get no hover and no HTML5 drag — keep the arrows visible */
 @media (hover:none) { .dc-move { opacity:1 } }
+
+/* Section-label rows must keep their action button on narrow screens */
+.sl { flex-wrap:wrap }
+.sl .btn-newsf { flex-shrink:0 }
