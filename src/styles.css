@@ -207,3 +207,14 @@ table.lst tr.lst-row:hover .lst-go { opacity:1 }
 .today-col .sl::after { display:none }
 .today-col .sl { gap:8px }
 .streak { font-family:var(--fm); font-size:10px; color:#e8a87c; background:rgba(232,168,124,.12); padding:2px 7px; border-radius:20px; flex-shrink:0; margin-top:1px; white-space:nowrap }
+
+/* Reordering domain tiles */
+.dcard { position:relative }
+.dcard.dragging { opacity:.35 }
+.dc-move { position:absolute; top:8px; right:8px; display:flex; gap:2px; opacity:0; transition:opacity .15s }
+.dcard:hover .dc-move, .dcard:focus-within .dc-move { opacity:1 }
+.dc-arrow { width:20px; height:20px; border-radius:5px; border:1px solid var(--bdr); background:var(--surf2); color:var(--mut); font-size:13px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 }
+.dc-arrow:hover:not(:disabled) { border-color:var(--acc); color:var(--acc) }
+.dc-arrow:disabled { opacity:.25; cursor:default }
+/* Touch screens get no hover and no HTML5 drag — keep the arrows visible */
+@media (hover:none) { .dc-move { opacity:1 } }

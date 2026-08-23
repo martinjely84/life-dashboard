@@ -455,6 +455,43 @@ export function addDomain({ name, emoji, color }) {
   return row.id
 }
 
+// Renumber sort_order to match a new ordering, writing only what changed.
+function applyDomainOrder(ordered) {
+  const changed = []
+  state.domains = state.domains.map((d) => {
+    const idx = ordered.findIndex((o) => o.id === d.id)
+    if (idx === -1 || d.sort_order === idx) return d
+    changed.push({ id: d.id, sort_order: idx })
+    return { ...d, sort_order: idx }
+  })
+  emit()
+  persist(async () => {
+    for (const c of changed) await backend.update('domains', c.id, { sort_order: c.sort_order })
+  })
+}
+
+// Move a domain to an absolute position (drag and drop).
+export function reorderDomain(id, targetIndex) {
+  const list = domainsSorted(state)
+  const from = list.findIndex((d) => d.id === id)
+  if (from === -1) return
+  const to = Math.max(0, Math.min(list.length - 1, targetIndex))
+  if (to === from) return
+  const next = [...list]
+  const [moved] = next.splice(from, 1)
+  next.splice(to, 0, moved)
+  applyDomainOrder(next)
+}
+
+// Nudge one place left or right — the arrow buttons, and touch screens
+// where HTML5 drag and drop does not fire.
+export function moveDomain(id, delta) {
+  const list = domainsSorted(state)
+  const from = list.findIndex((d) => d.id === id)
+  if (from === -1) return
+  reorderDomain(id, from + delta)
+}
+
 export function updateDomain(id, patch) {
   state.domains = state.domains.map((d) => (d.id === id ? { ...d, ...patch } : d))
   emit()
