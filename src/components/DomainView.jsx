@@ -133,6 +133,9 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
           <span style={{ fontFamily: 'var(--fm)', fontSize: 10, color: 'var(--dim)' }}>
             click a folder to drill in
           </span>
+          <button className="btn-newsf" onClick={() => setModal('new')}>
+            ＋ sub-folder{current ? ` in ${current.name}` : ''}
+          </button>
         </div>
         {root && (kids.length || items.length)
           ? <Tree root={root} onSelect={go} />
