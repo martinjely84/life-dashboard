@@ -64,7 +64,7 @@ function Header() {
 function LegacyBanner({ legacy, onDone }) {
   const run = async () => {
     const ok = window.confirm(
-      `Import ${legacy.goals} goals and ${legacy.pending} pending chats from the old dashboard?\n\n`
+      `Import ${legacy.goals} goals from the old dashboard?\n\n`
       + 'This REPLACES everything currently in this app with the old data. '
       + 'Your old dashboard file is not touched.',
     )
@@ -77,8 +77,7 @@ function LegacyBanner({ legacy, onDone }) {
   return (
     <div className="banner">
       <p>
-        Found your old dashboard in this browser — <strong>{legacy.goals} goals</strong> and{' '}
-        <strong>{legacy.pending} pending chats</strong>. Import them?
+        Found your old dashboard in this browser — <strong>{legacy.goals} goals</strong>. Import them?
       </p>
       <button className="btn-p" onClick={run}>Import</button>
       <button className="btn-s" onClick={() => { dismissLegacy(); onDone() }}>No thanks</button>

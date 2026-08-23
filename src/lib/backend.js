@@ -13,7 +13,7 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
 
 export const hasSupabase = Boolean(URL && KEY)
 
-export const TABLES = ['domains', 'folders', 'items', 'people', 'chats', 'todos', 'habits']
+export const TABLES = ['domains', 'folders', 'items', 'people', 'todos', 'habits']
 
 const LOCAL_KEY = 'mld-v1'
 

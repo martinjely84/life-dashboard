@@ -23,7 +23,7 @@ export function detectLegacy() {
       goals += (d.goals || []).length
       ;(d.subfolders || []).forEach((sf) => { goals += (sf.goals || []).length })
     })
-    return { raw: parsed, goals, pending: (parsed.pending || []).length }
+    return { raw: parsed, goals }
   } catch {
     return null
   }
@@ -57,7 +57,6 @@ function goalRows(goal, folderId, order, items) {
 export function rowsFromLegacy(legacy) {
   const folders = []
   const items = []
-  const chats = []
 
   const domains = DOMAINS.map((d, i) => ({
     id: d.id, name: d.name, emoji: d.emoji, color: d.color,
@@ -79,10 +78,6 @@ export function rowsFromLegacy(legacy) {
       old.goals.forEach((gl, i) => goalRows(gl, general.id, i, items))
     }
 
-    ;(old.chats || []).forEach((c) => {
-      chats.push({ id: uid(), domain_id: def.id, folder_id: null, person_id: null,
-        title: c.title, url: c.url || null, meta: c.meta || null, created_at: now() })
-    })
 
     ;(old.subfolders || []).forEach((sf) => {
       const folder = {
@@ -91,16 +86,7 @@ export function rowsFromLegacy(legacy) {
       }
       folders.push(folder)
       ;(sf.goals || []).forEach((gl, i) => goalRows(gl, folder.id, i, items))
-      ;(sf.chats || []).forEach((c) => {
-        chats.push({ id: uid(), domain_id: def.id, folder_id: folder.id, person_id: null,
-          title: c.title, url: c.url || null, meta: c.meta || null, created_at: now() })
-      })
     })
-  })
-
-  ;(legacy.pending || []).forEach((c) => {
-    chats.push({ id: uid(), domain_id: null, folder_id: null, person_id: null,
-      title: c.title, url: c.url || null, meta: c.meta || null, created_at: now() })
   })
 
   Object.entries(legacy.people || {}).forEach(([pid, pdata]) => {
@@ -112,11 +98,7 @@ export function rowsFromLegacy(legacy) {
       folders.push(folder)
       pdata.goals.forEach((gl, i) => goalRows(gl, folder.id, i, items))
     }
-    ;(pdata.chats || []).forEach((c) => {
-      chats.push({ id: uid(), domain_id: null, folder_id: null, person_id: pid,
-        title: c.title, url: c.url || null, meta: c.meta || null, created_at: now() })
-    })
   })
 
-  return { domains, folders, items, chats }
+  return { domains, folders, items }
 }

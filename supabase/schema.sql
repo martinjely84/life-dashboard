@@ -70,22 +70,6 @@ create table if not exists people (
   sort_order        integer default 0
 );
 
--- ── CHATS / NOTES ──────────────────────────────────────────
--- domain_id + person_id + folder_id all null  ⇒  the global Pending inbox.
-create table if not exists chats (
-  id          uuid primary key default gen_random_uuid(),
-  domain_id   text references domains(id) on delete cascade,
-  folder_id   uuid references folders(id) on delete cascade,
-  person_id   text references people(id) on delete cascade,
-  title       text not null,
-  url         text,
-  meta        text,
-  created_at  timestamptz default now()
-);
-create index if not exists chats_domain_idx on chats(domain_id);
-create index if not exists chats_folder_idx on chats(folder_id);
-create index if not exists chats_person_idx on chats(person_id);
-
 -- ── SINGLE-USER ACCESS ─────────────────────────────────────
 -- Martin is the only user. RLS is on, with a blanket policy for the
 -- anon key. If you ever add a second user, replace these policies.
@@ -93,12 +77,11 @@ alter table domains enable row level security;
 alter table folders enable row level security;
 alter table items   enable row level security;
 alter table people  enable row level security;
-alter table chats   enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['domains','folders','items','people','chats'] loop
+  foreach t in array array['domains','folders','items','people'] loop
     execute format('drop policy if exists %I on %I', t || '_all', t);
     execute format(
       'create policy %I on %I for all to anon, authenticated using (true) with check (true)',
@@ -110,7 +93,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['domains','folders','items','people','chats'] loop
+  foreach t in array array['domains','folders','items','people'] loop
     begin
       execute format('alter publication supabase_realtime add table %I', t);
     exception when duplicate_object then null;
@@ -154,3 +137,8 @@ begin
     end;
   end loop;
 end $$;
+-- Habits gain a cadence: daily, weekly or monthly.
+alter table habits add column if not exists cadence text not null default 'daily';
+alter table habits drop constraint if exists habits_cadence_check;
+alter table habits add constraint habits_cadence_check
+  check (cadence in ('daily','weekly','monthly'));

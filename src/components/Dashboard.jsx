@@ -1,28 +1,19 @@
 import { useState } from 'react'
 import {
-  useStore, domainsSorted, domainCounts, firstOpenGoal, moveChat, addDomain,
+  useStore, domainsSorted, domainCounts, firstOpenGoal, addDomain,
 } from '../lib/store'
 import { DomainModal } from './Modal'
 import Today from './Today'
 
 function DomainCard({ def, onOpen }) {
   const s = useStore()
-  const [over, setOver] = useState(false)
   const counts = domainCounts(s, def.id)
   const goal = firstOpenGoal(s, def.id)
 
   return (
     <div
-      className={`dcard${over ? ' dragover' : ''}`}
+      className="dcard"
       onClick={() => onOpen(def.id)}
-      onDragOver={(e) => { e.preventDefault(); setOver(true) }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        e.preventDefault()
-        setOver(false)
-        const id = e.dataTransfer.getData('text/chat-id')
-        if (id) moveChat(id, { domainId: def.id })
-      }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') onOpen(def.id) }}
@@ -42,7 +33,6 @@ function DomainCard({ def, onOpen }) {
         <div className="dc-pills">
           <span className="dc-pill">{counts.goals} open</span>
           <span className="dc-pill">{counts.actions} actions</span>
-          <span className="dc-pill">{counts.chats} chats</span>
         </div>
       </div>
     </div>

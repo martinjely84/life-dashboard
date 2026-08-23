@@ -1,8 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
 import { ITEM_TYPES } from '../lib/seed'
 import {
-  useStore, actionsOf, addAction, addItem, deleteItem, toggleItem, updateItemText,
+  useStore, actionsOf, addAction, addItem, deleteItem, toggleItem, updateItemText, addTodo,
 } from '../lib/store'
+
+// Copies an item's text onto the dashboard to-do list. Briefly confirms,
+// because otherwise nothing visible happens on this screen.
+function SendToTodo({ text }) {
+  const [sent, setSent] = useState(false)
+  return (
+    <button
+      className="gdl to-todo"
+      title="Add to to-do list"
+      onClick={() => { addTodo(text); setSent(true); setTimeout(() => setSent(false), 1600) }}
+    >
+      {sent ? '✓ added' : '＋ to-do'}
+    </button>
+  )
+}
 
 function EditableText({ value, className, onCommit }) {
   const [draft, setDraft] = useState(null)
@@ -40,6 +55,7 @@ function ActionRow({ action, focused }) {
         value={action.text}
         onCommit={(t) => updateItemText(action.id, t)}
       />
+      <SendToTodo text={action.text} />
       <button className="adl" onClick={() => deleteItem(action.id)} aria-label="Delete action">✕</button>
     </div>
   )
@@ -102,6 +118,7 @@ function ItemRow({ item, accent, focusItemId }) {
           </button>
         )}
 
+        <SendToTodo text={item.text} />
         <button className="gdl" onClick={() => deleteItem(item.id)} aria-label="Delete item">✕</button>
       </div>
 

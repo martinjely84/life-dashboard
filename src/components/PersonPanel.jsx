@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
 import ItemList from './ItemList'
-import ChatList from './ChatList'
 import {
-  useStore, personFolderId, folderItems, chatsFor, ensurePersonFolder, moveChat,
+  useStore, personFolderId, folderItems, ensurePersonFolder,
 } from '../lib/store'
 
 export default function PersonPanel({ personId, onClose }) {
@@ -18,7 +17,6 @@ export default function PersonPanel({ personId, onClose }) {
 
   if (!person) return null
   const items = folderId ? folderItems(s, folderId) : []
-  const chats = chatsFor(s, { personId })
 
   return (
     <div className="ov" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -45,13 +43,6 @@ export default function PersonPanel({ personId, onClose }) {
           emptyText="No goals yet"
         />
 
-        <div className="sl" style={{ marginTop: '1.25rem', marginBottom: '.75rem' }}>Chats</div>
-        <ChatList
-          chats={chats}
-          color={person.color}
-          onDropChat={(id) => moveChat(id, { personId })}
-          dropLabel={`Drop a pending chat onto ${person.name}`}
-        />
       </div>
     </div>
   )

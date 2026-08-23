@@ -127,37 +127,3 @@ export function DomainModal({ initial, title, confirm = 'Create', onSubmit, onCl
     </Modal>
   )
 }
-
-// Add-a-chat form for the Pending inbox.
-export function ChatModal({ onSubmit, onClose }) {
-  const [title, setTitle] = useState('')
-  const [url, setUrl] = useState('')
-  const [meta, setMeta] = useState('')
-  const ref = useRef(null)
-  useEffect(() => { ref.current?.focus() }, [])
-
-  const submit = () => {
-    if (!title.trim()) return
-    onSubmit({ title: title.trim(), url: url.trim(), meta: meta.trim() })
-    onClose()
-  }
-
-  return (
-    <Modal title="Add a chat to inbox" onClose={onClose}>
-      <label>Title</label>
-      <input ref={ref} value={title} onChange={(e) => setTitle(e.target.value)}
-        placeholder="e.g. Planning notes for next month…"
-        onKeyDown={(e) => e.key === 'Enter' && submit()} />
-      <label>Claude URL (optional)</label>
-      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://claude.ai/chat/…" />
-      <label>Short description (optional)</label>
-      <input value={meta} onChange={(e) => setMeta(e.target.value)}
-        placeholder="e.g. short description of the chat"
-        onKeyDown={(e) => e.key === 'Enter' && submit()} />
-      <div className="mbtns">
-        <button className="btn-s" onClick={onClose}>Cancel</button>
-        <button className="btn-p" onClick={submit}>Add to inbox</button>
-      </div>
-    </Modal>
-  )
-}

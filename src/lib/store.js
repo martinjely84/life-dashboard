@@ -4,12 +4,12 @@
 
 import { useSyncExternalStore } from 'react'
 import { backend, hasSupabase } from './backend'
-import { DOMAINS, PEOPLE, PENDING, PERSON_GOALS, PERSON_CHATS } from './seed'
+import { DOMAINS, PEOPLE, PERSON_GOALS } from './seed'
 
 const uid = () => crypto.randomUUID()
 
 let state = {
-  domains: [], folders: [], items: [], people: [], chats: [], todos: [], habits: [],
+  domains: [], folders: [], items: [], people: [], todos: [], habits: [],
   status: 'loading', // loading | ready | error
   error: null,
 }
@@ -67,7 +67,6 @@ export async function refresh() {
 function rowsFromSeed() {
   const folders = []
   const items = []
-  const chats = []
 
   const walkFolder = (spec, domainId, parentId, order) => {
     const folder = {
@@ -90,10 +89,6 @@ function rowsFromSeed() {
         })
       })
     })
-    ;(spec.chats || []).forEach((c) => {
-      chats.push({ id: uid(), domain_id: domainId, folder_id: folder.id, person_id: null,
-        title: c.title, url: c.url || null, meta: c.meta || null, created_at: new Date().toISOString() })
-    })
     ;(spec.children || []).forEach((child, i) => walkFolder(child, domainId, folder.id, i))
     return folder
   }
@@ -105,16 +100,6 @@ function rowsFromSeed() {
 
   DOMAINS.forEach((d) => {
     d.folders.forEach((f, i) => walkFolder(f, d.id, null, i))
-    ;(d.chats || []).forEach((c) => {
-      chats.push({ id: uid(), domain_id: d.id, folder_id: null, person_id: null,
-        title: c.title, url: c.url || null, meta: c.meta || null, created_at: new Date().toISOString() })
-    })
-  })
-
-  // Pending inbox = chats with no domain, folder or person.
-  PENDING.forEach((c) => {
-    chats.push({ id: uid(), domain_id: null, folder_id: null, person_id: null,
-      title: c.title, url: c.url || null, meta: c.meta || null, created_at: new Date().toISOString() })
   })
 
   // People get a hidden per-person folder so their goals reuse the item model.
@@ -140,14 +125,8 @@ function rowsFromSeed() {
       })
     })
   })
-  Object.entries(PERSON_CHATS).forEach(([pid, cs]) => {
-    cs.forEach((c) => {
-      chats.push({ id: uid(), domain_id: null, folder_id: null, person_id: pid,
-        title: c.title, url: c.url || null, meta: c.meta || null, created_at: new Date().toISOString() })
-    })
-  })
 
-  return { domains, folders, items, people, chats }
+  return { domains, folders, items, people }
 }
 
 async function seedEverything() {
@@ -155,7 +134,7 @@ async function seedEverything() {
 }
 
 // Insert in dependency order; items go parents-first so the FK holds.
-export async function writeRows({ domains, people, folders, items, chats }) {
+export async function writeRows({ domains, people, folders, items }) {
   if (domains?.length) await backend.insert('domains', domains)
   if (people?.length) await backend.insert('people', people)
   if (folders?.length) {
@@ -178,7 +157,6 @@ export async function writeRows({ domains, people, folders, items, chats }) {
     if (parents.length) await backend.insert('items', parents)
     if (children.length) await backend.insert('items', children)
   }
-  if (chats?.length) await backend.insert('chats', chats)
 }
 
 // ── SELECTORS ────────────────────────────────────────────────────────
@@ -243,8 +221,7 @@ export function domainCounts(s, domainId) {
     if (i.type === 'action') actions++
     else goals++
   })
-  const chats = s.chats.filter((c) => c.domain_id === domainId).length
-  return { goals, actions, chats }
+  return { goals, actions }
 }
 
 export function firstOpenGoal(s, domainId) {
@@ -254,15 +231,6 @@ export function firstOpenGoal(s, domainId) {
   const hit = s.items.find((i) => folderIds.has(i.folder_id) && i.type !== 'action' && !i.done)
   return hit?.text || ''
 }
-
-export const pendingChats = (s) =>
-  s.chats.filter((c) => !c.domain_id && !c.folder_id && !c.person_id)
-
-export const chatsFor = (s, { domainId = null, folderId = null, personId = null }) =>
-  s.chats.filter((c) =>
-    (personId ? c.person_id === personId
-      : folderId ? c.folder_id === folderId
-      : c.domain_id === domainId && !c.folder_id))
 
 export function personFolderId(s, personId) {
   return s.folders.find((f) => f.name === `__person__${personId}`)?.id || null
@@ -340,29 +308,64 @@ export function clearDoneTodos() {
   persist(() => removeAll(doomed.map((t) => ['todos', t.id])))
 }
 
-// ── DAILY HABITS ─────────────────────────────────────────────────────
-// A habit is "done" only if it was last ticked today, so every checkbox
-// clears itself overnight. The streak is what carries over.
-export const todayKey = () => {
-  const d = new Date()
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+// ── HABITS: DAILY, WEEKLY, MONTHLY ───────────────────────────────────
+// A habit is "done" only if it was last ticked inside the current period,
+// so its checkbox clears itself when a new day, week or month starts. The
+// streak counts consecutive periods and is what carries over.
+
+export const CADENCES = {
+  daily:   { label: 'Daily',   unit: 'day' },
+  weekly:  { label: 'Weekly',  unit: 'week' },
+  monthly: { label: 'Monthly', unit: 'month' },
 }
 
-const yesterdayKey = () => {
-  const d = new Date()
-  d.setDate(d.getDate() - 1)
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const pad = (n) => String(n).padStart(2, '0')
+const fmtDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+const parseDate = (s) => {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
 }
 
-export const habitsSorted = (s) => [...(s.habits || [])].sort(bySort)
-export const habitDoneToday = (h) => h.last_done === todayKey()
+// A label identifying which period a date falls in. Weeks are named by the
+// Monday that starts them, so the comparison is a plain string equality.
+function periodKey(date, cadence) {
+  if (cadence === 'monthly') return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`
+  if (cadence === 'weekly') {
+    const d = new Date(date)
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7)) // back to Monday
+    return `W${fmtDate(d)}`
+  }
+  return fmtDate(date)
+}
 
-export function addHabit(text) {
+function previousPeriodDate(cadence, from = new Date()) {
+  const d = new Date(from)
+  if (cadence === 'monthly') d.setMonth(d.getMonth() - 1)
+  else if (cadence === 'weekly') d.setDate(d.getDate() - 7)
+  else d.setDate(d.getDate() - 1)
+  return d
+}
+
+export const todayKey = () => fmtDate(new Date())
+
+export const habitsSorted = (s, cadence) =>
+  [...(s.habits || [])]
+    .filter((h) => (cadence ? (h.cadence || 'daily') === cadence : true))
+    .sort(bySort)
+
+// Kept the old name so callers read naturally; it means "done this period".
+export function habitDoneToday(h) {
+  if (!h.last_done) return false
+  const cadence = h.cadence || 'daily'
+  return periodKey(parseDate(h.last_done), cadence) === periodKey(new Date(), cadence)
+}
+
+export function addHabit(text, cadence = 'daily') {
   const row = {
-    id: uid(), text, last_done: null, streak: 0,
-    sort_order: (state.habits || []).length, created_at: new Date().toISOString(),
+    id: uid(), text, cadence, last_done: null, streak: 0,
+    sort_order: (state.habits || []).filter((h) => (h.cadence || 'daily') === cadence).length,
+    created_at: new Date().toISOString(),
   }
   state.habits = [...(state.habits || []), row]
   emit()
@@ -372,17 +375,21 @@ export function addHabit(text) {
 export function toggleHabit(id) {
   const h = state.habits.find((x) => x.id === id)
   if (!h) return
+  const cadence = h.cadence || 'daily'
+  const prev = previousPeriodDate(cadence)
 
   let patch
   if (habitDoneToday(h)) {
-    // Unticking today: step the streak back, and hand the "last done" back
-    // to yesterday if the streak survives, so the chain stays intact.
+    // Unticking: step the streak back, and hand "last done" to the previous
+    // period if the streak survives, so the chain stays intact.
     const streak = Math.max(0, (h.streak || 0) - 1)
-    patch = { last_done: streak > 0 ? yesterdayKey() : null, streak }
+    patch = { last_done: streak > 0 ? fmtDate(prev) : null, streak }
   } else {
-    // Continuing yesterday's chain extends it; any other gap starts again.
-    const streak = h.last_done === yesterdayKey() ? (h.streak || 0) + 1 : 1
-    patch = { last_done: todayKey(), streak }
+    // Ticking straight after the previous period extends the chain; any
+    // longer gap starts a new one.
+    const continues = h.last_done
+      && periodKey(parseDate(h.last_done), cadence) === periodKey(prev, cadence)
+    patch = { last_done: todayKey(), streak: continues ? (h.streak || 0) + 1 : 1 }
   }
 
   state.habits = state.habits.map((x) => (x.id === id ? { ...x, ...patch } : x))
@@ -462,7 +469,6 @@ export function domainDeleteImpact(s, domainId) {
     folders: folderIds.size,
     items: items.filter((i) => i.type !== 'action').length,
     actions: items.filter((i) => i.type === 'action').length,
-    chats: s.chats.filter((c) => c.domain_id === domainId || folderIds.has(c.folder_id)).length,
   }
 }
 
@@ -478,17 +484,14 @@ async function removeAll(pairs) {
 export function deleteDomain(id) {
   const folderIds = new Set(state.folders.filter((f) => f.domain_id === id).map((f) => f.id))
   const doomedItems = state.items.filter((i) => folderIds.has(i.folder_id))
-  const doomedChats = state.chats.filter((c) => c.domain_id === id || folderIds.has(c.folder_id))
 
   state.domains = state.domains.filter((d) => d.id !== id)
   state.folders = state.folders.filter((f) => f.domain_id !== id)
   state.items = state.items.filter((i) => !folderIds.has(i.folder_id))
-  state.chats = state.chats.filter((c) => c.domain_id !== id && !folderIds.has(c.folder_id))
   emit()
 
   persist(() => removeAll([
     ...doomedItems.map((i) => ['items', i.id]),
-    ...doomedChats.map((c) => ['chats', c.id]),
     ...[...folderIds].map((f) => ['folders', f]),
     ['domains', id],
   ]))
@@ -515,16 +518,13 @@ export function renameFolder(id, name) {
 export function deleteFolder(id) {
   const idSet = new Set(descendantFolderIds(state, id))
   const doomedItems = state.items.filter((i) => idSet.has(i.folder_id))
-  const doomedChats = state.chats.filter((c) => c.folder_id && idSet.has(c.folder_id))
 
   state.folders = state.folders.filter((f) => !idSet.has(f.id))
   state.items = state.items.filter((i) => !idSet.has(i.folder_id))
-  state.chats = state.chats.filter((c) => !c.folder_id || !idSet.has(c.folder_id))
   emit()
 
   persist(() => removeAll([
     ...doomedItems.map((i) => ['items', i.id]),
-    ...doomedChats.map((c) => ['chats', c.id]),
     ...[...idSet].map((f) => ['folders', f]),
   ]))
 }
@@ -577,35 +577,11 @@ export function deleteItem(id) {
   persist(() => backend.remove('items', id))
 }
 
-export function addChat({ title, url, meta, domainId = null, folderId = null, personId = null }) {
-  const row = {
-    id: uid(), domain_id: domainId, folder_id: folderId, person_id: personId,
-    title, url: url || null, meta: meta || null, created_at: new Date().toISOString(),
-  }
-  state.chats = [...state.chats, row]
-  emit()
-  persist(() => backend.insert('chats', [row]))
-}
-
-export function moveChat(id, { domainId = null, folderId = null, personId = null }) {
-  const patch = { domain_id: domainId, folder_id: folderId, person_id: personId }
-  state.chats = state.chats.map((c) => (c.id === id ? { ...c, ...patch } : c))
-  emit()
-  persist(() => backend.update('chats', id, patch))
-}
-
-export function deleteChat(id) {
-  state.chats = state.chats.filter((c) => c.id !== id)
-  emit()
-  persist(() => backend.remove('chats', id))
-}
-
-// Wipe every folder, item and chat, then write a fresh set — used by the
+// Wipe every folder and item, then write a fresh set — used by the
 // one-time import from the old localStorage dashboard. Domains and people
 // keep their ids; scores are carried over from the incoming rows.
-export async function replaceAllWith({ domains, folders, items, chats }) {
+export async function replaceAllWith({ domains, folders, items }) {
   try {
-    for (const c of state.chats) await backend.remove('chats', c.id)
     // Removing root folders cascades to their descendants and items.
     const roots = state.folders.filter((f) => !f.parent_folder_id)
     for (const f of roots) await backend.remove('folders', f.id)
@@ -617,7 +593,7 @@ export async function replaceAllWith({ domains, folders, items, chats }) {
     if (domains?.length) {
       for (const d of domains) await backend.update('domains', d.id, { score: d.score })
     }
-    await writeRows({ folders, items, chats })
+    await writeRows({ folders, items })
     await refresh()
   } catch (e) {
     console.error('import failed', e)

@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import Tree from './Tree'
 import ItemList from './ItemList'
-import ChatList from './ChatList'
 import FamilyTree from './FamilyTree'
 import { PromptModal, ConfirmModal, DomainModal } from './Modal'
 import { ITEM_TYPES, SCORE_LABELS } from '../lib/seed'
 import {
   useStore, childFolders, folderById, folderItems, folderPath, folderCounts,
-  chatsFor, adjustScore, addFolder, renameFolder, deleteFolder, moveChat,
+  adjustScore, addFolder, renameFolder, deleteFolder,
   updateDomain, deleteDomain, domainDeleteImpact,
 } from '../lib/store'
 
@@ -59,7 +58,6 @@ function buildRoot(s, domain, folderId) {
 export default function DomainView({ domainId, onBack, onOpenPerson, initialFolderId = null, focusItemId = null }) {
   const s = useStore()
   const [folderId, setFolderId] = useState(initialFolderId)
-  const [tab, setTab] = useState('items')
   const [modal, setModal] = useState(null) // new | rename | delete | editDomain | deleteDomain
 
   const domain = s.domains.find((d) => d.id === domainId)
@@ -68,7 +66,6 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
   const path = folderId ? folderPath(s, folderId) : []
   const kids = childFolders(s, domainId, folderId)
   const items = folderId ? folderItems(s, folderId) : []
-  const chats = chatsFor(s, folderId ? { folderId } : { domainId })
   const current = folderId ? folderById(s, folderId) : null
   const root = buildRoot(s, domain, folderId)
 
@@ -143,17 +140,6 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
       </div>
 
       <div className="panel">
-        <div className="tabs">
-          <button className={`tab${tab === 'items' ? ' on' : ''}`} onClick={() => setTab('items')}>
-            Folders &amp; Items
-          </button>
-          <button className={`tab${tab === 'chats' ? ' on' : ''}`} onClick={() => setTab('chats')}>
-            Chats
-          </button>
-        </div>
-
-        {tab === 'items' && (
-          <>
             <div className="sl">Sub-folders</div>
             <div className="filters" style={{ marginBottom: '1.25rem' }}>
               {kids.map((f) => (
@@ -182,17 +168,6 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
                 Items live inside folders — open one above, or create a sub-folder.
               </div>
             )}
-          </>
-        )}
-
-        {tab === 'chats' && (
-          <ChatList
-            chats={chats}
-            color={domain.color}
-            onDropChat={(id) => moveChat(id, folderId ? { domainId, folderId } : { domainId })}
-            dropLabel={`Drop a pending chat into ${current ? current.name : domain.name}`}
-          />
-        )}
       </div>
 
       {modal === 'new' && (
@@ -239,7 +214,6 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
           im.folders && `${im.folders} folder${im.folders === 1 ? '' : 's'}`,
           im.items && `${im.items} item${im.items === 1 ? '' : 's'}`,
           im.actions && `${im.actions} action${im.actions === 1 ? '' : 's'}`,
-          im.chats && `${im.chats} chat${im.chats === 1 ? '' : 's'}`,
         ].filter(Boolean)
         return (
           <ConfirmModal

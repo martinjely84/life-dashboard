@@ -83,8 +83,5 @@ export const DOMAINS = [
   },
 ]
 
-export const PENDING = []
-
 export const PERSON_GOALS = {}
 
-export const PERSON_CHATS = {}

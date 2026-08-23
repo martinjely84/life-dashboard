@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   useStore, todosSorted, addTodo, toggleTodo, updateTodo, deleteTodo, clearDoneTodos,
   habitsSorted, habitDoneToday, addHabit, toggleHabit, updateHabit, deleteHabit,
+  CADENCES,
 } from '../lib/store'
 
 function EditableText({ value, className, onCommit }) {
@@ -91,13 +92,30 @@ function TodoList() {
 
 function HabitList() {
   const s = useStore()
-  const habits = habitsSorted(s)
+  const [cadence, setCadence] = useState('daily')
+  const habits = habitsSorted(s, cadence)
   const doneToday = habits.filter(habitDoneToday).length
 
   return (
     <div className="panel today-col">
       <div className="sl" style={{ marginBottom: '.75rem' }}>
-        Daily habits <span className="pbadge">{doneToday}/{habits.length}</span>
+        Habits <span className="pbadge">{doneToday}/{habits.length}</span>
+      </div>
+
+      <div className="tabs" style={{ marginBottom: '.9rem' }}>
+        {Object.entries(CADENCES).map(([key, c]) => {
+          const all = habitsSorted(s, key)
+          const left = all.filter((h) => !habitDoneToday(h)).length
+          return (
+            <button
+              key={key}
+              className={`tab${cadence === key ? ' on' : ''}`}
+              onClick={() => setCadence(key)}
+            >
+              {c.label}{left > 0 ? ` · ${left}` : ''}
+            </button>
+          )
+        })}
       </div>
 
       <div className="glist">
@@ -120,7 +138,8 @@ function HabitList() {
                   onCommit={(v) => updateHabit(h.id, v)}
                 />
                 {h.streak > 0 && (
-                  <span className="streak" title={`${h.streak} day streak`}>
+                  <span className="streak"
+                    title={`${h.streak} ${CADENCES[cadence].unit}${h.streak === 1 ? '' : 's'} in a row`}>
                     🔥 {h.streak}
                   </span>
                 )}
@@ -128,10 +147,14 @@ function HabitList() {
               </div>
             </div>
           )
-        }) : <div className="empty">No habits yet</div>}
+        }) : <div className="empty">No {CADENCES[cadence].label.toLowerCase()} habits yet</div>}
       </div>
 
-      <AddRow placeholder="Add a daily habit…" onAdd={addHabit} />
+      <AddRow
+        key={cadence}
+        placeholder={`Add a ${CADENCES[cadence].label.toLowerCase()} habit…`}
+        onAdd={(t) => addHabit(t, cadence)}
+      />
     </div>
   )
 }
