@@ -222,3 +222,18 @@ table.lst tr.lst-row:hover .lst-go { opacity:1 }
 /* Section-label rows must keep their action button on narrow screens */
 .sl { flex-wrap:wrap }
 .sl .btn-newsf { flex-shrink:0 }
+
+/* Collapsible sub-folder sections */
+.acc { display:flex; flex-direction:column; gap:8px }
+.accs { border:1px solid var(--bdr); border-radius:12px; background:var(--surf2); overflow:hidden }
+.accs.on { border-color:var(--bdrh) }
+.accs-hd { width:100%; display:flex; align-items:center; gap:10px; padding:11px 14px; background:none; border:none; cursor:pointer; text-align:left }
+.accs-hd:hover { background:var(--surf3) }
+.accs-ch { color:var(--dim); font-size:12px; width:12px; flex-shrink:0 }
+.accs-nm { font-size:13px; font-weight:600; color:var(--txt) }
+.accs-meta { font-family:var(--fm); font-size:10px; color:var(--dim); flex:1 }
+.accs-open { font-family:var(--fm); font-size:10px; padding:2px 8px; border-radius:20px; flex-shrink:0 }
+.accs-go { font-family:var(--fm); font-size:10px; color:var(--dim); flex-shrink:0; padding:2px 6px; border-radius:6px }
+.accs-go:hover { color:var(--acc); background:var(--bg) }
+.accs-body { padding:4px 14px 14px; border-top:1px solid var(--bdr); background:var(--surf) }
+@media (max-width:520px) { .accs-meta { display:none } }

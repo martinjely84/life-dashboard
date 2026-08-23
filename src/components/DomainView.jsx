@@ -55,10 +55,79 @@ function buildRoot(s, domain, folderId) {
   return f ? folderNode(f) : null
 }
 
+// A sub-folder that expands in place to show and edit its goals, so you can
+// work in it without navigating away. Drilling in is still there for folders
+// that have their own sub-folders.
+function FolderSection({ folder, domain, open, onToggle, onDrillIn, focusItemId }) {
+  const s = useStore()
+  const items = folderItems(s, folder.id)
+  const subs = childFolders(s, domain.id, folder.id)
+  const { open: openCount, total } = folderCounts(s, folder.id)
+
+  return (
+    <div className={`accs${open ? ' on' : ''}`}>
+      <button className="accs-hd" onClick={onToggle} aria-expanded={open}>
+        <span className="accs-ch">{open ? '▾' : '▸'}</span>
+        <span className="accs-nm">{folder.name}</span>
+        <span className="accs-meta">
+          {subs.length > 0 && `${subs.length} folder${subs.length === 1 ? '' : 's'} · `}
+          {total} item{total === 1 ? '' : 's'}
+        </span>
+        {openCount > 0 && (
+          <span className="accs-open" style={{ background: `${domain.color}22`, color: domain.color }}>
+            {openCount} open
+          </span>
+        )}
+        <span
+          className="accs-go"
+          role="button"
+          tabIndex={0}
+          title="Open this folder"
+          onClick={(e) => { e.stopPropagation(); onDrillIn() }}
+          onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onDrillIn() } }}
+        >
+          open →
+        </span>
+      </button>
+
+      {open && (
+        <div className="accs-body">
+          {subs.length > 0 && (
+            <div className="filters" style={{ marginBottom: '.75rem' }}>
+              {subs.map((sf) => (
+                <button key={sf.id} className="btn-newsf" style={{ borderStyle: 'solid' }}
+                  onClick={onDrillIn}>
+                  {sf.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <ItemList
+            items={items}
+            folderId={folder.id}
+            accent={domain.color}
+            focusItemId={focusItemId}
+            emptyText="Nothing in here yet"
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function DomainView({ domainId, onBack, onOpenPerson, initialFolderId = null, focusItemId = null }) {
   const s = useStore()
   const [folderId, setFolderId] = useState(initialFolderId)
   const [modal, setModal] = useState(null) // new | rename | delete | editDomain | deleteDomain
+  const [expanded, setExpanded] = useState(
+    () => new Set(initialFolderId ? [initialFolderId] : []),
+  )
+
+  const toggleExpanded = (id) => setExpanded((prev) => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
 
   const domain = s.domains.find((d) => d.id === domainId)
   if (!domain) return <div className="center">Domain not found.</div>
@@ -143,34 +212,47 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
       </div>
 
       <div className="panel">
-            <div className="sl">Sub-folders</div>
-            <div className="filters" style={{ marginBottom: '1.25rem' }}>
-              {kids.map((f) => (
-                <button key={f.id} className="btn-newsf" style={{ borderStyle: 'solid' }}
-                  onClick={() => setFolderId(f.id)}>
-                  {f.name} · {folderCounts(s, f.id).open} open
-                </button>
-              ))}
-              <button className="btn-newsf" onClick={() => setModal('new')}>＋ new sub-folder</button>
-              {current && (
-                <>
-                  <button className="btn-newsf" onClick={() => setModal('rename')}>rename</button>
-                  <button className="btn-newsf" style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
-                    onClick={() => setModal('delete')}>delete folder</button>
-                </>
-              )}
-            </div>
+        <div className="sl">
+          Sub-folders&nbsp;
+          <span style={{ fontFamily: 'var(--fm)', fontSize: 10, color: 'var(--dim)' }}>
+            click to expand
+          </span>
+          <button className="btn-newsf" onClick={() => setModal('new')}>＋ new sub-folder</button>
+        </div>
 
-            <div className="sl">Items</div>
-            {folderId ? (
-              <ItemList items={items} folderId={folderId} accent={domain.color}
-                focusItemId={folderId === initialFolderId ? focusItemId : null}
-                emptyText="No items in this folder yet" />
-            ) : (
-              <div className="empty">
-                Items live inside folders — open one above, or create a sub-folder.
-              </div>
-            )}
+        {kids.length ? (
+          <div className="acc">
+            {kids.map((f) => (
+              <FolderSection
+                key={f.id}
+                folder={f}
+                domain={domain}
+                open={expanded.has(f.id)}
+                onToggle={() => toggleExpanded(f.id)}
+                onDrillIn={() => setFolderId(f.id)}
+                focusItemId={f.id === initialFolderId ? focusItemId : null}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="empty" style={{ marginBottom: '1rem' }}>
+            No sub-folders yet
+          </div>
+        )}
+
+        {current && (
+          <>
+            <div className="sl" style={{ marginTop: '1.5rem' }}>
+              Items directly in {current.name}
+              <button className="btn-newsf" onClick={() => setModal('rename')}>rename</button>
+              <button className="btn-newsf" style={{ color: 'var(--red)', borderColor: 'var(--red)' }}
+                onClick={() => setModal('delete')}>delete folder</button>
+            </div>
+            <ItemList items={items} folderId={folderId} accent={domain.color}
+              focusItemId={folderId === initialFolderId ? focusItemId : null}
+              emptyText="No items directly in this folder" />
+          </>
+        )}
       </div>
 
       {modal === 'new' && (
