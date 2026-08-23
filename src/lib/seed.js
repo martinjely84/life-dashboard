@@ -10,13 +10,16 @@
 export const SCORE_LABELS = ['', 'Critical', 'Very low', 'Low', 'Below avg', 'Average',
   'Above avg', 'Good', 'Very good', 'Excellent', 'Thriving']
 
+// A goal sits at the top of a folder. Everything else hangs beneath a goal.
 export const ITEM_TYPES = {
-  goal:          { label: 'Goal',          short: 'GOAL', color: '#c8a96e' },
-  task:          { label: 'Task',          short: 'TASK', color: '#6ba3ff' },
-  action:        { label: 'Action',        short: 'ACT',  color: '#4ecdc4' },
-  consideration: { label: 'Consideration', short: 'CONS', color: '#b088f9' },
-  research:      { label: 'To Research',   short: 'RSCH', color: '#f09ab5' },
+  goal:     { label: 'Goal',        short: 'GOAL', color: '#c8a96e' },
+  action:   { label: 'Action',      short: 'ACT',  color: '#4ecdc4' },
+  task:     { label: 'Task',        short: 'TASK', color: '#6ba3ff' },
+  research: { label: 'To Research', short: 'RSCH', color: '#f09ab5' },
 }
+
+// The types that live under a goal, in the order they appear in pickers.
+export const CHILD_TYPES = ['action', 'task', 'research']
 
 export const PEOPLE = [
   { id: 'me',       name: 'Me',       role: 'You',     emoji: '\u{1F464}', color: '#c8a96e', rel: '', parent_person_id: null, sort_order: 0 },

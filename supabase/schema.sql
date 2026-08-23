@@ -32,7 +32,7 @@ create index if not exists folders_parent_idx on folders(parent_folder_id);
 create table if not exists items (
   id              uuid primary key default gen_random_uuid(),
   folder_id       uuid not null references folders(id) on delete cascade,
-  type            text not null check (type in ('goal','task','action','consideration','research')),
+  type            text not null check (type in ('goal','action','task','research')),
   text            text not null,
   done            boolean default false,
   parent_item_id  uuid references items(id) on delete cascade,
@@ -43,11 +43,12 @@ create table if not exists items (
 create index if not exists items_folder_idx on items(folder_id);
 create index if not exists items_parent_idx on items(parent_item_id);
 
--- an action must have a parent goal; nothing else may have a parent
+-- a goal sits at folder level; every other type hangs beneath a goal
 alter table items drop constraint if exists items_action_nesting;
-alter table items add constraint items_action_nesting check (
-  (type = 'action' and parent_item_id is not null)
-  or (type <> 'action' and parent_item_id is null)
+alter table items drop constraint if exists items_nesting;
+alter table items add constraint items_nesting check (
+  (type = 'goal' and parent_item_id is null)
+  or (type <> 'goal' and parent_item_id is not null)
 );
 
 create or replace function touch_updated_at() returns trigger as $$

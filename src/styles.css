@@ -246,3 +246,7 @@ table.lst tr.lst-row:hover .lst-go { opacity:1 }
 .to-todo:hover { color:var(--acc); border-color:var(--bdr) }
 .to-todo.sent { color:#7ec887 }
 .habit-pick { display:inline-flex; gap:2px; align-items:center; background:var(--bg); border:1px solid var(--bdrh); border-radius:8px; padding:2px }
+
+/* Type badge on a goal's children */
+.badge.sm { font-size:8px; padding:1px 5px; margin-top:3px }
+.aadd select { background:var(--bg); border:1px solid var(--bdr); border-radius:6px; padding:5px 6px; font-size:11px; outline:none; cursor:pointer }

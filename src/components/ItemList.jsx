@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ITEM_TYPES } from '../lib/seed'
+import { ITEM_TYPES, CHILD_TYPES } from '../lib/seed'
 import {
   useStore, actionsOf, addAction, addItem, deleteItem, toggleItem, updateItemText,
   addTodo, addHabit, CADENCES,
@@ -78,17 +78,21 @@ function EditableText({ value, className, onCommit }) {
   )
 }
 
-function ActionRow({ action, focused }) {
+function ChildRow({ action, focused }) {
+  const meta = ITEM_TYPES[action.type] || ITEM_TYPES.action
   return (
     <div className={`ai${focused ? ' focus' : ''}`}>
       <button
         className="ack"
-        style={action.done ? { background: '#4ecdc4', borderColor: '#4ecdc4', color: '#0d0f14' } : undefined}
+        style={action.done ? { background: meta.color, borderColor: meta.color, color: '#0d0f14' } : undefined}
         onClick={() => toggleItem(action.id)}
         aria-label={action.done ? 'Mark not done' : 'Mark done'}
       >
         {action.done ? '✓' : ''}
       </button>
+      <span className="badge sm" style={{ background: `${meta.color}22`, color: meta.color }}>
+        {meta.short}
+      </span>
       <EditableText
         className={`atx${action.done ? ' dn' : ''}`}
         value={action.text}
@@ -115,6 +119,7 @@ function ItemRow({ item, accent, focusItemId }) {
 
   const [open, setOpen] = useState(hitsAction)
   const [draft, setDraft] = useState('')
+  const [childType, setChildType] = useState('action')
   const ref = useRef(null)
 
   useEffect(() => {
@@ -125,7 +130,7 @@ function ItemRow({ item, accent, focusItemId }) {
   const submit = () => {
     const t = draft.trim()
     if (!t) return
-    addAction(item.id, t)
+    addAction(item.id, t, childType)
     setDraft('')
   }
 
@@ -166,21 +171,27 @@ function ItemRow({ item, accent, focusItemId }) {
       {isGoal && open && (
         <div className="alist">
           {actions.map((a) => (
-            <ActionRow key={a.id} action={a} focused={a.id === focusItemId} />
+            <ChildRow key={a.id} action={a} focused={a.id === focusItemId} />
           ))}
           {!actions.length && (
             <div style={{ fontSize: 11, color: 'var(--dim)', fontStyle: 'italic', padding: '4px 0' }}>
-              No actions yet
+              Nothing under this goal yet
             </div>
           )}
           <div className="aadd">
+            <select value={childType} onChange={(e) => setChildType(e.target.value)}
+              aria-label="Type">
+              {CHILD_TYPES.map((k) => (
+                <option key={k} value={k}>{ITEM_TYPES[k].label}</option>
+              ))}
+            </select>
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && submit()}
-              placeholder="Add an action…"
+              placeholder={`Add ${childType === 'action' ? 'an action' : `a ${ITEM_TYPES[childType].label.toLowerCase()}`}…`}
             />
-            <button className="btn-a" onClick={submit}>Add action</button>
+            <button className="btn-a" onClick={submit}>Add</button>
           </div>
         </div>
       )}
@@ -192,12 +203,12 @@ export default function ItemList({
   items, folderId, accent = '#c8a96e', focusItemId = null, emptyText = 'Nothing here yet',
 }) {
   const [text, setText] = useState('')
-  const [type, setType] = useState('goal')
 
+  // Only goals live at folder level now; everything else hangs off a goal.
   const submit = () => {
     const t = text.trim()
     if (!t || !folderId) return
-    addItem(folderId, type, t)
+    addItem(folderId, 'goal', t)
     setText('')
   }
 
@@ -213,18 +224,13 @@ export default function ItemList({
 
       {folderId && (
         <div className="gadd">
-          <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Item type">
-            {Object.entries(ITEM_TYPES)
-              .filter(([k]) => k !== 'action')
-              .map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && submit()}
-            placeholder={`Add a ${ITEM_TYPES[type].label.toLowerCase()}…`}
+            placeholder="Add a goal…"
           />
-          <button className="btn-g" onClick={submit}>Add</button>
+          <button className="btn-g" onClick={submit}>Add goal</button>
         </div>
       )}
     </>

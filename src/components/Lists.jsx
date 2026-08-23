@@ -6,7 +6,6 @@ const TABS = [
   { key: 'goal',          label: 'All Goals' },
   { key: 'action',        label: 'All Actions' },
   { key: 'task',          label: 'All Tasks' },
-  { key: 'consideration', label: 'All Considerations' },
   { key: 'research',      label: 'All To Research' },
   { key: '',              label: 'Everything' },
 ]

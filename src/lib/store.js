@@ -579,12 +579,13 @@ export function addItem(folderId, type, text) {
   return row.id
 }
 
-export function addAction(goalId, text) {
+// Adds a child under a goal — an action, a task or something to research.
+export function addAction(goalId, text, type = 'action') {
   const goal = state.items.find((i) => i.id === goalId)
   if (!goal) return
   const siblings = actionsOf(state, goalId)
   const row = {
-    id: uid(), folder_id: goal.folder_id, type: 'action', text, done: false,
+    id: uid(), folder_id: goal.folder_id, type, text, done: false,
     parent_item_id: goalId, sort_order: siblings.length,
     created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
   }
