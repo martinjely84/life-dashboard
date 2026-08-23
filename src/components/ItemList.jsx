@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { ITEM_TYPES, CHILD_TYPES } from '../lib/seed'
 import {
   useStore, actionsOf, addAction, addItem, deleteItem, toggleItem, updateItemText,
-  addTodo, addHabit, CADENCES,
+  addTodo, addHabit, CADENCES, noteCount,
 } from '../lib/store'
+import NotePanel from './NotePanel'
 
 // Copies an item's text onto the dashboard to-do list. Briefly confirms,
 // because otherwise nothing visible happens on this screen.
@@ -58,6 +59,22 @@ function SendToHabit({ text }) {
   )
 }
 
+// Opens the update timeline. Double-clicking the row does the same, but a
+// visible button means you can find it, and it shows the count at a glance.
+function NotesButton({ item, onOpen }) {
+  const s = useStore()
+  const n = noteCount(s, item.id)
+  return (
+    <button
+      className={`gdl to-todo${n ? ' has-notes' : ''}`}
+      title={n ? `${n} update${n === 1 ? '' : 's'}` : 'Add notes and updates'}
+      onClick={onOpen}
+    >
+      ✎ {n || 'notes'}
+    </button>
+  )
+}
+
 function EditableText({ value, className, onCommit }) {
   const [draft, setDraft] = useState(null)
   const shown = draft ?? value
@@ -80,8 +97,12 @@ function EditableText({ value, className, onCommit }) {
 
 function ChildRow({ action, focused }) {
   const meta = ITEM_TYPES[action.type] || ITEM_TYPES.action
+  const [notesOpen, setNotesOpen] = useState(false)
   return (
-    <div className={`ai${focused ? ' focus' : ''}`}>
+    <div
+      className={`ai${focused ? ' focus' : ''}`}
+      onDoubleClick={(e) => { if (e.target.tagName !== 'INPUT') setNotesOpen(true) }}
+    >
       <button
         className="ack"
         style={action.done ? { background: meta.color, borderColor: meta.color, color: '#0d0f14' } : undefined}
@@ -98,9 +119,11 @@ function ChildRow({ action, focused }) {
         value={action.text}
         onCommit={(t) => updateItemText(action.id, t)}
       />
+      <NotesButton item={action} onOpen={() => setNotesOpen(true)} />
       <SendToTodo text={action.text} />
       <SendToHabit text={action.text} />
       <button className="adl" onClick={() => deleteItem(action.id)} aria-label="Delete action">✕</button>
+      {notesOpen && <NotePanel item={action} onClose={() => setNotesOpen(false)} />}
     </div>
   )
 }
@@ -120,6 +143,7 @@ function ItemRow({ item, accent, focusItemId }) {
   const [open, setOpen] = useState(hitsAction)
   const [draft, setDraft] = useState('')
   const [childType, setChildType] = useState('action')
+  const [notesOpen, setNotesOpen] = useState(false)
   const ref = useRef(null)
 
   useEffect(() => {
@@ -136,7 +160,10 @@ function ItemRow({ item, accent, focusItemId }) {
 
   return (
     <div className={`gi-wrap${focused ? ' focus' : ''}`} ref={ref}>
-      <div className="gi">
+      <div
+        className="gi"
+        onDoubleClick={(e) => { if (e.target.tagName !== 'INPUT') setNotesOpen(true) }}
+      >
         <button
           className="gck"
           style={item.done ? { background: accent, borderColor: accent, color: '#0d0f14' } : undefined}
@@ -163,10 +190,13 @@ function ItemRow({ item, accent, focusItemId }) {
           </button>
         )}
 
+        <NotesButton item={item} onOpen={() => setNotesOpen(true)} />
         <SendToTodo text={item.text} />
         <SendToHabit text={item.text} />
         <button className="gdl" onClick={() => deleteItem(item.id)} aria-label="Delete item">✕</button>
       </div>
+
+      {notesOpen && <NotePanel item={item} onClose={() => setNotesOpen(false)} />}
 
       {isGoal && open && (
         <div className="alist">

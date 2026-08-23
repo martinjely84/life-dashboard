@@ -9,7 +9,7 @@ import { DOMAINS, PEOPLE, PERSON_GOALS } from './seed'
 const uid = () => crypto.randomUUID()
 
 let state = {
-  domains: [], folders: [], items: [], people: [], todos: [], habits: [],
+  domains: [], folders: [], items: [], people: [], todos: [], habits: [], notes: [],
   status: 'loading', // loading | ready | error
   error: null,
 }
@@ -265,6 +265,37 @@ export function allItems(s, type) {
         parentText: parent?.text || null,
       }
     })
+}
+
+// ── NOTES / UPDATES ──────────────────────────────────────────────────
+// A running log against an item. Newest first, like a timeline.
+export const notesFor = (s, itemId) =>
+  (s.notes || [])
+    .filter((n) => n.item_id === itemId)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+
+export const noteCount = (s, itemId) =>
+  (s.notes || []).filter((n) => n.item_id === itemId).length
+
+export function addNote(itemId, text) {
+  const row = {
+    id: uid(), item_id: itemId, text, created_at: new Date().toISOString(),
+  }
+  state.notes = [...(state.notes || []), row]
+  emit()
+  persist(() => backend.insert('notes', [row]))
+}
+
+export function updateNote(id, text) {
+  state.notes = state.notes.map((n) => (n.id === id ? { ...n, text } : n))
+  emit()
+  persist(() => backend.update('notes', id, { text }))
+}
+
+export function deleteNote(id) {
+  state.notes = state.notes.filter((n) => n.id !== id)
+  emit()
+  persist(() => backend.remove('notes', id))
 }
 
 // ── TO-DO LIST ───────────────────────────────────────────────────────

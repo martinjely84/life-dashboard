@@ -143,3 +143,24 @@ alter table habits add column if not exists cadence text not null default 'daily
 alter table habits drop constraint if exists habits_cadence_check;
 alter table habits add constraint habits_cadence_check
   check (cadence in ('daily','weekly','monthly'));
+-- ── NOTES / UPDATES ────────────────────────────────────────
+-- A running log against an item, newest first.
+create table if not exists notes (
+  id          uuid primary key default gen_random_uuid(),
+  item_id     uuid not null references items(id) on delete cascade,
+  text        text not null,
+  created_at  timestamptz default now()
+);
+create index if not exists notes_item_idx on notes(item_id);
+
+alter table notes enable row level security;
+
+do $$
+begin
+  execute 'drop policy if exists notes_all on notes';
+  execute 'create policy notes_all on notes for all to anon, authenticated using (true) with check (true)';
+  begin
+    execute 'alter publication supabase_realtime add table notes';
+  exception when duplicate_object then null;
+  end;
+end $$;
