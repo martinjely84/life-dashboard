@@ -3,6 +3,7 @@ import Dashboard from './components/Dashboard'
 import DomainView from './components/DomainView'
 import Lists from './components/Lists'
 import PersonPanel from './components/PersonPanel'
+import CeoBot from './components/CeoBot'
 import { useStore, init, isCloud, replaceAllWith } from './lib/store'
 import { detectLegacy, rowsFromLegacy, dismissLegacy, legacyDismissed } from './lib/migrate'
 
@@ -163,6 +164,7 @@ export default function App() {
       )}
 
       {person && <PersonPanel personId={person} onClose={() => setPerson(null)} />}
+      {s.status === 'ready' && <CeoBot />}
     </div>
   )
 }
