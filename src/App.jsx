@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Dashboard from './components/Dashboard'
 import DomainView from './components/DomainView'
 import Lists from './components/Lists'
+import Today from './components/Today'
 import PersonPanel from './components/PersonPanel'
 import CeoBot from './components/CeoBot'
 import { useStore, init, isCloud, replaceAllWith } from './lib/store'
@@ -110,6 +111,8 @@ export default function App() {
       <nav className="nav">
         <button className={view.name === 'dashboard' ? 'on' : ''}
           onClick={() => setView({ name: 'dashboard' })}>Dashboard</button>
+        <button className={view.name === 'today' ? 'on' : ''}
+          onClick={() => setView({ name: 'today' })}>Today</button>
         <button className={view.name === 'lists' ? 'on' : ''}
           onClick={() => setView({ name: 'lists' })}>Lists</button>
         {view.name === 'domain' && <button className="on">{
@@ -145,6 +148,7 @@ export default function App() {
               onOpenPerson={setPerson}
             />
           )}
+          {view.name === 'today' && <Today />}
           {view.name === 'lists' && (
             <Lists
               onOpen={(row) => {
