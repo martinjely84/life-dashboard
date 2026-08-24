@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import Tree from './Tree'
 import ItemList from './ItemList'
-import FamilyTree from './FamilyTree'
 import { PromptModal, ConfirmModal, DomainModal } from './Modal'
 import { ITEM_TYPES, SCORE_LABELS } from '../lib/seed'
 import {
@@ -190,8 +189,6 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
           </div>
         </div>
       )}
-
-      {domainId === 'family' && !folderId && <FamilyTree onOpenPerson={onOpenPerson} />}
 
       <div className="tree-wrap">
         <div className="sl" style={{ marginBottom: '.75rem' }}>
