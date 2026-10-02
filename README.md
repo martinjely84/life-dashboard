@@ -138,6 +138,7 @@ src/
     backend.js    supabase | localStorage, behind one interface
     store.js      in-memory tree, selectors, optimistic mutations
     migrate.js    one-time import of the old 'mdc-v6' blob
+    meals.js      weekly dinner plan, safe foods and grocery list — edit weekly
   components/
     Tree.jsx        recursive SVG tidy-tree — the primary navigation
     Dashboard.jsx   8 domain tiles + pending inbox
@@ -146,6 +147,7 @@ src/
     Lists.jsx       cross-domain sortable/filterable tables
     FamilyTree.jsx  the people tree
     PersonPanel.jsx per-person goals and chats
+    MealPlanner.jsx Meals tab: renders meals.js; grocery ticks in localStorage
 supabase/schema.sql
 ```
 

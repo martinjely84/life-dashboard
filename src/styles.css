@@ -276,3 +276,23 @@ table.lst tr.lst-row:hover .lst-go { opacity:1 }
 .tl-del:hover { color:var(--red) }
 .tl-text { font-size:13px; line-height:1.55; white-space:pre-wrap; cursor:text }
 .tl-edit { width:100%; min-height:60px; resize:vertical; background:var(--bg); border:1px solid var(--acc); border-radius:8px; padding:7px 9px; font-family:var(--fb); font-size:13px; color:var(--txt); outline:none; line-height:1.55 }
+
+/* MEAL PLANNER */
+.meal-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px }
+.meal-card { background:var(--surf2); border:1px solid var(--bdr); border-radius:12px; padding:.85rem 1rem; display:flex; flex-direction:column; gap:6px }
+.meal-hd { display:flex; align-items:center; justify-content:space-between; gap:8px }
+.meal-day { font-family:var(--fm); font-size:11px; letter-spacing:.12em; text-transform:uppercase }
+.meal-tag { font-family:var(--fm); font-size:10px; padding:2px 8px; border-radius:20px; white-space:nowrap }
+.meal-main { font-family:var(--fd); font-size:1.15rem; line-height:1.2 }
+.meal-row { display:flex; gap:8px; font-size:12px; line-height:1.45 }
+.meal-who { font-family:var(--fm); font-size:10px; letter-spacing:.05em; text-transform:uppercase; width:58px; flex-shrink:0; padding-top:2px }
+.meal-txt { color:var(--txt) }
+.meal-safe { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:.75rem }
+.meal-chip { font-size:12px; font-weight:500; padding:4px 12px; border-radius:20px; border:1px solid }
+.meal-hint { font-family:var(--fm); font-size:10px; color:var(--dim) }
+.meal-count { font-family:var(--fm); font-size:10px; color:var(--acc); background:rgba(200,169,110,.12); padding:1px 7px; border-radius:20px; letter-spacing:.05em }
+.meal-cat { margin-bottom:.5rem }
+.meal-cat-nm { font-family:var(--fm); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--mut); margin:.25rem 0 .4rem }
+.meal-gi { cursor:pointer }
+.meal-note { color:var(--mut); font-weight:400 }
+.gtx.dn .meal-note { color:var(--dim) }
