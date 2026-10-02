@@ -111,7 +111,7 @@ function FolderSection({ folder, domain, open, onToggle, onDrillIn, focusItemId 
   )
 }
 
-export default function DomainView({ domainId, onBack, onOpenPerson, initialFolderId = null, focusItemId = null }) {
+export default function DomainView({ domainId, onBack, onOpenPerson, onOpenMeals, initialFolderId = null, focusItemId = null }) {
   const s = useStore()
   const [folderId, setFolderId] = useState(initialFolderId)
   const [modal, setModal] = useState(null) // new | rename | delete | editDomain | deleteDomain
@@ -179,6 +179,12 @@ export default function DomainView({ domainId, onBack, onOpenPerson, initialFold
             <div className="sc-lbl">{SCORE_LABELS[domain.score]}</div>
           </div>
           <div className="filters" style={{ marginBottom: 0 }}>
+            {domain.id === 'family' && onOpenMeals && (
+              <button className="btn-newsf" style={{ borderStyle: 'solid', color: domain.color, borderColor: domain.color }}
+                onClick={onOpenMeals}>
+                🍽️ meal planner →
+              </button>
+            )}
             <button className="btn-newsf" onClick={() => setModal('editDomain')}>
               rename / recolour domain
             </button>

@@ -3,6 +3,7 @@ import Dashboard from './components/Dashboard'
 import DomainView from './components/DomainView'
 import Lists from './components/Lists'
 import Today from './components/Today'
+import MealPlanner from './components/MealPlanner'
 import PersonPanel from './components/PersonPanel'
 import CeoBot from './components/CeoBot'
 import { useStore, init, isCloud, replaceAllWith } from './lib/store'
@@ -115,6 +116,8 @@ export default function App() {
           onClick={() => setView({ name: 'today' })}>Today</button>
         <button className={view.name === 'lists' ? 'on' : ''}
           onClick={() => setView({ name: 'lists' })}>Lists</button>
+        <button className={view.name === 'meals' ? 'on' : ''}
+          onClick={() => setView({ name: 'meals' })}>Meals</button>
         {view.name === 'domain' && <button className="on">{
           s.domains.find((d) => d.id === view.id)?.name || 'Domain'
         }</button>}
@@ -131,7 +134,10 @@ export default function App() {
         </div>
       )}
 
-      {s.status === 'loading' && <div className="center">Loading…</div>}
+      {/* Static plan from src/lib/meals.js — doesn't need the database. */}
+      {view.name === 'meals' && <MealPlanner />}
+
+      {s.status === 'loading' && view.name !== 'meals' && <div className="center">Loading…</div>}
 
       {s.status === 'ready' && (
         <>
@@ -146,6 +152,7 @@ export default function App() {
               focusItemId={view.focusItemId || null}
               onBack={() => setView({ name: 'dashboard' })}
               onOpenPerson={setPerson}
+              onOpenMeals={() => setView({ name: 'meals' })}
             />
           )}
           {view.name === 'today' && <Today />}
