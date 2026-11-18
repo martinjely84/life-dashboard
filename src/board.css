@@ -1,0 +1,137 @@
+/* ───────────── FAMILY BOARD (/board) — phone + laptop ─────────────
+   Same data as the TV, in the app's own dark/gold look. One column on a
+   phone; two columns and a 7-day strip on a laptop. */
+.fb .panel.fb-card { padding:1.1rem 1.2rem; margin-bottom:1rem }
+.fb .fb-sl { margin-bottom:.75rem }
+.fb .pbadge { font-family:var(--fm); font-size:10px; color:var(--txt); background:var(--surf3); border-radius:20px; padding:1px 8px; letter-spacing:0 }
+.fb .empty { font-size:13px; color:var(--mut); padding:.25rem 0 }
+.fb .pill { font-family:var(--fm); font-size:10px; letter-spacing:.02em; text-transform:none; color:var(--mut); border:1px solid var(--bdrh); border-radius:20px; padding:0 7px; margin-left:6px; white-space:nowrap }
+.fb .pill.green { color:#7ec887; border-color:#7ec88766 }
+.fb .gck.on { background:var(--acc); border-color:var(--acc); color:#0d0f14 }
+.fb .btn-s.danger { border-color:var(--red); color:var(--red) }
+.fb-hint { font-size:12px; color:var(--mut); margin-bottom:.75rem; line-height:1.5 }
+.fb-hint code, .fb-fresh code { font-family:var(--fm); font-size:11px }
+.signout { font-family:var(--fm); font-size:10px; background:none; border:1px solid var(--bdr); border-radius:20px; color:var(--mut); padding:2px 8px; cursor:pointer }
+.signout:hover { color:var(--txt); border-color:var(--bdrh) }
+
+/* Sub-tabs */
+.fb-tabs { display:flex; align-items:center; gap:6px; margin-bottom:1.25rem; flex-wrap:wrap }
+.fb-tabs button { font-size:13px; font-weight:600; background:var(--surf); border:1px solid var(--bdr); border-radius:20px; color:var(--mut); padding:6px 14px; cursor:pointer; min-height:36px }
+.fb-tabs button.on { background:var(--acc); border-color:var(--acc); color:#0d0f14 }
+.fb-tv-link { margin-left:auto; font-family:var(--fm); font-size:11px; color:var(--acc); text-decoration:none }
+
+/* Header: date, colour key, clock */
+.fb-hdr { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom:1rem; flex-wrap:wrap }
+.fb-date { font-family:var(--fd); font-size:clamp(1.6rem, 4vw, 2.2rem); line-height:1.1 }
+.fb-legend { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px; font-size:12px; color:var(--mut) }
+.fb-legend span { display:inline-flex; align-items:center; gap:6px }
+.fb-legend i { width:10px; height:10px; border-radius:50% }
+.fb-clock { font-family:var(--fm); font-size:1.8rem; line-height:1; text-align:right }
+.fb-clock small { display:block; font-size:10px; color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-top:4px }
+
+/* Clashes */
+.fb-clash { background:rgba(255,107,107,.1); border:1px solid var(--red); border-radius:12px; padding:.75rem 1rem; margin-bottom:1rem; font-size:13px }
+.fb-clash strong { color:var(--red) }
+.fb-clash ul { list-style:none; margin-top:4px }
+.fb-clash i { font-style:normal; font-family:var(--fm); font-size:10px; text-transform:uppercase; color:var(--red); letter-spacing:.05em }
+
+/* Layout */
+.fb-grid { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:0 1rem; align-items:start }
+.fb-col { min-width:0 }
+@media (max-width:860px) {
+  .fb-grid { grid-template-columns:minmax(0,1fr) }
+}
+
+/* Events */
+.fb-evs { list-style:none; display:flex; flex-direction:column; gap:6px }
+.fb-ev { display:grid; grid-template-columns:auto 1fr auto; align-items:baseline; gap:10px; padding:8px 10px; background:var(--m-bg); border-left:3px solid var(--m); border-radius:8px; font-size:14px }
+.fb-ev.past { opacity:.45 }
+.fb-ev.live { box-shadow:0 0 0 1px var(--m) inset }
+.fb-ev.clash { box-shadow:0 0 0 1px var(--red) inset }
+.fb-ev-time { font-family:var(--fm); font-size:12px; color:var(--m); filter:brightness(1.25); white-space:nowrap }
+.fb-ev-day { color:var(--mut) }
+.fb-ev-ti { min-width:0; overflow-wrap:anywhere }
+.fb-ev-who { font-size:11px; color:var(--mut); white-space:nowrap }
+.fb-evs.compact .fb-ev { grid-template-columns:auto 1fr; padding:6px 8px; font-size:13px; gap:8px }
+.fb-evs.compact .fb-ev-who { display:none }
+
+/* 7-day strip: columns on a wide screen, a list of days on a phone */
+.fb-week { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:8px }
+.fb-day { min-width:0; background:var(--surf2); border:1px solid var(--bdr); border-radius:10px; padding:8px }
+.fb-day.today { border-color:var(--acc) }
+.fb-day-hd { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; gap:6px }
+.fb-day-wd { font-family:var(--fm); font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--mut) }
+.fb-day.today .fb-day-wd { color:var(--acc) }
+.fb-day-dn { font-size:12px; font-weight:600; white-space:nowrap }
+.fb-free { font-size:12px; color:var(--dim) }
+.fb-week .fb-evs.compact .fb-ev { grid-template-columns:1fr; gap:0 }
+@media (max-width:1000px) {
+  .fb-week { grid-template-columns:minmax(0,1fr) }
+  .fb-week .fb-evs.compact .fb-ev { grid-template-columns:auto 1fr; gap:8px }
+}
+
+/* To-dos (and review cards) */
+.fb-add { display:flex; gap:8px; margin-bottom:.75rem }
+.fb-add input { flex:1; min-width:0; background:var(--bg); border:1px solid var(--bdrh); border-radius:8px; padding:9px 12px; font-size:16px; outline:none }
+.fb-add input:focus { border-color:var(--acc) }
+.fb-add .btn-g { min-height:40px }
+.fb-todo-list { display:flex; flex-direction:column; gap:6px }
+.fb-todo { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; padding:8px 10px; text-align:left; background:var(--surf2); border:1px solid var(--bdr); border-left:3px solid var(--m, var(--bdrh)); border-radius:8px; cursor:pointer; font-size:14px }
+.fb-todo:hover:not(:disabled) { border-color:var(--bdrh) }
+.fb-todo:disabled { cursor:default }
+.fb-todo .gck { margin-top:0 }
+.fb-todo-tx { flex:1; min-width:0; overflow-wrap:anywhere }
+.fb-todo.done .fb-todo-tx { text-decoration:line-through; color:var(--mut) }
+.fb-undo { font-family:var(--fm); font-size:10px; color:var(--acc) }
+.fb-due { font-family:var(--fm); font-size:10px; border:1px solid var(--bdrh); border-radius:20px; padding:1px 7px; white-space:nowrap; color:var(--mut) }
+.fb-due.today { color:#e8c06e; border-color:#e8c06e66 }
+.fb-due.overdue { color:var(--red); border-color:var(--red); background:rgba(255,107,107,.1) }
+
+/* Goals */
+.fb-goal-grp { margin-bottom:.75rem }
+.fb-goal-h { display:flex; font-family:var(--fm); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--c); margin-bottom:4px }
+.fb-goal-h span { margin-left:auto; color:var(--dim) }
+.fb-goal-grp ul { list-style:none }
+.fb-goal-grp li { position:relative; padding:3px 0 3px 14px; font-size:14px }
+.fb-goal-grp li::before { content:''; position:absolute; left:2px; top:.75em; width:6px; height:6px; border-radius:50%; background:var(--c) }
+
+/* Big actions */
+.fb-act { padding:8px 10px; margin-bottom:6px; background:var(--surf2); border-left:3px solid var(--c); border-radius:8px }
+.fb-act-tx { font-size:14px; font-weight:500 }
+.fb-act-meta { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11px; color:var(--mut); margin-top:2px }
+.fb-act-due { font-weight:600; color:var(--txt) }
+.fb-act.soon .fb-act-due { color:#e8c06e }
+.fb-act.overdue { background:rgba(255,107,107,.08); box-shadow:0 0 0 1px rgba(255,107,107,.5) inset }
+.fb-act.overdue .fb-act-due { color:var(--red) }
+.fb-acts.has-overdue .pbadge { background:var(--red); color:#0d0f14 }
+
+/* Weekly review remote */
+.fb-timer.over { border-color:var(--red) }
+.fb-tm-name { font-size:1.1rem; font-weight:600 }
+.fb-tm-clock { font-family:var(--fm); font-size:3.2rem; line-height:1.1; text-align:center; margin:.5rem 0 .25rem }
+.fb-timer.over .fb-tm-clock { color:var(--red) }
+.fb-tm-sub { text-align:center; font-size:12px; color:var(--mut) }
+.fb-steps { list-style:none; margin:.75rem 0; font-size:13px; color:var(--mut); counter-reset:s }
+.fb-steps li { counter-increment:s; padding:2px 0 }
+.fb-steps li::before { content:counter(s) '. '; font-family:var(--fm) }
+.fb-steps li.done { text-decoration:line-through; color:var(--dim) }
+.fb-steps li.on { color:var(--acc); font-weight:600 }
+.fb-steps small { color:var(--dim); font-family:var(--fm) }
+.fb-tm-ctl { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px }
+.fb-tm-ctl button { min-height:44px; padding:8px 4px }
+.fb-tm-ctl button:disabled { opacity:.4; cursor:default }
+.fb-cards.k-win { border-top:3px solid #34D399 }
+.fb-cards.k-decision { border-top:3px solid #93A8F4 }
+.fb-cards.k-parked { border-top:3px solid #A78BFA }
+
+/* TV screen links */
+.fb-fresh { margin-top:.5rem; padding:.75rem 1rem; border:1px solid var(--acc); border-radius:10px; background:var(--surf2); font-size:13px; display:flex; flex-direction:column; gap:8px }
+.fb-url { display:block; padding:8px 10px; background:var(--bg); border-radius:6px; overflow-wrap:anywhere; user-select:all }
+.fb-fresh-act { display:flex; gap:12px; align-items:center; flex-wrap:wrap }
+.fb-fresh-act .fb-hint { margin:0; flex:1; min-width:200px }
+.fb-dev-list { list-style:none; display:flex; flex-direction:column; gap:8px }
+.fb-dev-list li { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--bdr) }
+.fb-dev-nm { font-weight:600; font-size:14px }
+.fb-dev-meta { font-size:11px; color:var(--mut) }
+.fb-revoked { margin-top:.75rem; font-size:12px; color:var(--mut) }
+.fb-revoked summary { cursor:pointer }

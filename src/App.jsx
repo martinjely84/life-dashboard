@@ -6,10 +6,18 @@ import Today from './components/Today'
 import MealPlanner from './components/MealPlanner'
 import PersonPanel from './components/PersonPanel'
 import CeoBot from './components/CeoBot'
+import SignIn from './components/SignIn'
+import FamilyBoard from './components/board/FamilyBoard'
+import TvPage from './components/board/TvPage'
 import { useStore, init, isCloud, replaceAllWith } from './lib/store'
+import { hasSupabase } from './lib/backend'
+import { useAuth, signOut } from './lib/auth'
+import { useMemberBoard, useDemoBoard } from './lib/boardData'
 import { detectLegacy, rowsFromLegacy, dismissLegacy, legacyDismissed } from './lib/migrate'
 
-const PASSPHRASE = import.meta.env.VITE_APP_PASSPHRASE?.trim()
+// Local-only mode keeps the old optional passphrase screen. With Supabase,
+// real sign-in (magic link + allowlist + RLS) replaces it.
+const PASSPHRASE = hasSupabase ? '' : import.meta.env.VITE_APP_PASSPHRASE?.trim()
 
 // Header text. Set these in .env.local (and in Vercel) so personal detail
 // stays out of the repository.
@@ -44,6 +52,7 @@ function Gate({ onPass }) {
 }
 
 function Header() {
+  const auth = useAuth()
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
@@ -59,6 +68,9 @@ function Header() {
         <div className={`sync${isCloud ? ' cloud' : ''}`}>
           {isCloud ? '☁ synced' : '○ local only'}
         </div>
+        {auth.email && (
+          <button className="signout" onClick={signOut} title={`Signed in as ${auth.email}`}>Sign out</button>
+        )}
       </div>
     </header>
   )
@@ -88,12 +100,42 @@ function LegacyBanner({ legacy, onDone }) {
   )
 }
 
+const MemberBoard = () => <FamilyBoard board={useMemberBoard()} />
+const DemoBoard = () => <FamilyBoard board={useDemoBoard()} />
+
+// Views with their own address, so a phone can bookmark /board.
+const PATHS = { board: '/board' }
+const viewFromPath = () => (window.location.pathname.replace(/\/+$/, '') === '/board' ? 'board' : 'dashboard')
+
 export default function App() {
+  // The TV page is its own thing: no app chrome, and it can run without a
+  // signed-in user (read-only device link).
+  if (window.location.pathname.startsWith('/tv')) return <TvPage />
+  return <Gated />
+}
+
+function Gated() {
+  const auth = useAuth()
+  if (hasSupabase && auth.status !== 'member') return <SignIn />
+  return <Main />
+}
+
+function Main() {
   const s = useStore()
   const [gated, setGated] = useState(
     Boolean(PASSPHRASE) && sessionStorage.getItem('mld-gate') !== '1',
   )
-  const [view, setView] = useState({ name: 'dashboard' })
+  const [view, setViewState] = useState({ name: viewFromPath() })
+  const setView = (v) => {
+    const path = PATHS[v.name] || '/'
+    if (window.location.pathname !== path) window.history.pushState(null, '', path)
+    setViewState(v)
+  }
+  useEffect(() => {
+    const onPop = () => setViewState({ name: viewFromPath() })
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
   const [person, setPerson] = useState(null)
   const [legacy, setLegacy] = useState(null)
 
@@ -110,6 +152,8 @@ export default function App() {
       <Header />
 
       <nav className="nav">
+        <button className={view.name === 'board' ? 'on' : ''}
+          onClick={() => setView({ name: 'board' })}>Family board</button>
         <button className={view.name === 'dashboard' ? 'on' : ''}
           onClick={() => setView({ name: 'dashboard' })}>Dashboard</button>
         <button className={view.name === 'today' ? 'on' : ''}
@@ -129,7 +173,7 @@ export default function App() {
         <div className="err">
           <strong>Could not reach the database.</strong> {s.error}
           <div style={{ marginTop: 6, color: 'var(--mut)' }}>
-            Check VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY, and that schema.sql has been run.
+            Check VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY, and that schema.sql and the migrations have been run.
           </div>
         </div>
       )}
@@ -137,7 +181,10 @@ export default function App() {
       {/* Static plan from src/lib/meals.js — doesn't need the database. */}
       {view.name === 'meals' && <MealPlanner />}
 
-      {s.status === 'loading' && view.name !== 'meals' && <div className="center">Loading…</div>}
+      {/* The family board shows its own loading and error states. */}
+      {view.name === 'board' && (isCloud ? <MemberBoard /> : <DemoBoard />)}
+
+      {s.status === 'loading' && !['meals', 'board'].includes(view.name) && <div className="center">Loading…</div>}
 
       {s.status === 'ready' && (
         <>

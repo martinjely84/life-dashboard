@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
+import { mcpKey, configError, bearerOk } from './_lib/mcpAuth.js'
 
 // ── Supabase ─────────────────────────────────────────────────────────
+// Server-side only, with the service-role key. No fallback to the
+// publishable key: with RLS locked down it could do nothing anyway, and a
+// silent fallback hides a misconfiguration.
 function makeSb() {
-  const url = process.env.VITE_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
-  if (!url || !key) throw new Error('Supabase env vars not set')
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) throw new Error('SUPABASE_SERVICE_ROLE_KEY and SUPABASE_URL (or VITE_SUPABASE_URL) must be set on the server')
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
@@ -165,7 +169,8 @@ async function executeTool(name, input) {
 
       return {
         domains: tree,
-        todos: (t.data || []).filter((x) => !x.done).map((x) => ({ id: x.id, text: x.text })),
+        todos: (t.data || []).filter((x) => !x.done && !x.archived_at)
+          .map((x) => ({ id: x.id, text: x.text, due_date: x.due_date || null })),
         habits: (h.data || []).map((x) => ({
           id: x.id, text: x.text, cadence: x.cadence,
           streak: x.streak || 0, done_today: !!x.last_done,
@@ -322,13 +327,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, mcp-session-id')
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  // Bearer-token auth (skip if DASHBOARD_MCP_KEY is not set — useful for testing)
-  const key = process.env.DASHBOARD_MCP_KEY
-  if (key) {
-    const auth = req.headers.authorization
-    if (auth !== `Bearer ${key}`) {
-      return res.status(401).json({ error: 'Unauthorized — set Authorization: Bearer <DASHBOARD_MCP_KEY>' })
-    }
+  // Always authenticated: the owner key itself, or an access token issued
+  // by /api/oauth/token. If no key is configured, nothing gets in.
+  if (!mcpKey()) return res.status(503).json({ error: configError() })
+  if (!bearerOk(req)) {
+    res.setHeader('WWW-Authenticate', 'Bearer')
+    return res.status(401).json({ error: 'Unauthorized' })
   }
 
   // Health-check

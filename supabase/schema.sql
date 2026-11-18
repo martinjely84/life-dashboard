@@ -1,7 +1,13 @@
 -- ============================================================
 -- Martin's Life Dashboard — schema
--- Run this once in Supabase → SQL Editor → New query → Run.
+-- Run this once in Supabase → SQL Editor → New query → Run, then the
+-- files in supabase/migrations/ in name order (see MIGRATION_NOTES.md).
 -- Safe to re-run: everything is IF NOT EXISTS / OR REPLACE.
+--
+-- Access: RLS is on for every table and this file creates NO policies.
+-- Migration 01 adds the family-members-only policies; until it runs, only
+-- the service-role key can read or write. (Earlier versions of this file
+-- granted anon full access — migration 02 removes those policies.)
 -- ============================================================
 
 create extension if not exists "pgcrypto";
@@ -71,24 +77,12 @@ create table if not exists people (
   sort_order        integer default 0
 );
 
--- ── SINGLE-USER ACCESS ─────────────────────────────────────
--- Martin is the only user. RLS is on, with a blanket policy for the
--- anon key. If you ever add a second user, replace these policies.
+-- ── ACCESS ─────────────────────────────────────────────────
+-- RLS on, no policies here: see migrations/20261117_01_family_board.sql.
 alter table domains enable row level security;
 alter table folders enable row level security;
 alter table items   enable row level security;
 alter table people  enable row level security;
-
-do $$
-declare t text;
-begin
-  foreach t in array array['domains','folders','items','people'] loop
-    execute format('drop policy if exists %I on %I', t || '_all', t);
-    execute format(
-      'create policy %I on %I for all to anon, authenticated using (true) with check (true)',
-      t || '_all', t);
-  end loop;
-end $$;
 
 -- ── REALTIME ───────────────────────────────────────────────
 do $$
@@ -128,10 +122,6 @@ do $$
 declare t text;
 begin
   foreach t in array array['todos','habits'] loop
-    execute format('drop policy if exists %I on %I', t || '_all', t);
-    execute format(
-      'create policy %I on %I for all to anon, authenticated using (true) with check (true)',
-      t || '_all', t);
     begin
       execute format('alter publication supabase_realtime add table %I', t);
     exception when duplicate_object then null;
@@ -157,8 +147,6 @@ alter table notes enable row level security;
 
 do $$
 begin
-  execute 'drop policy if exists notes_all on notes';
-  execute 'create policy notes_all on notes for all to anon, authenticated using (true) with check (true)';
   begin
     execute 'alter publication supabase_realtime add table notes';
   exception when duplicate_object then null;
