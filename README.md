@@ -1,5 +1,13 @@
 # Martin's Life Dashboard
 
+> **Family board:** `/board` (phone + laptop) and `/tv` (the TV) show the
+> family's week, to-dos, goals and big actions. Sign-in is a magic link
+> with an email allowlist; TVs use revocable read-only links. To set it up,
+> see [MIGRATION_NOTES.md](MIGRATION_NOTES.md). To push the box's to-dos
+> and calendar in, see [docs/BOX_SYNC.md](docs/BOX_SYNC.md).
+>
+> ![TV view (sample data)](docs/screenshots/tv.png)
+
 Rebuild of the single-file `martin-dashboard.html` app as a hosted React app with
 a real database, so the same data is on the phone, the work PC and the home PC.
 
@@ -38,7 +46,9 @@ I can't do this part for you; it needs your account login.
 
 1. In the project, open **SQL Editor** → **New query**.
 2. Paste the entire contents of [`supabase/schema.sql`](supabase/schema.sql) and hit **Run**.
-3. You should see "Success. No rows returned." The script is safe to re-run.
+3. Then run each file in [`supabase/migrations/`](supabase/migrations) in name order,
+   following [MIGRATION_NOTES.md](MIGRATION_NOTES.md) (allowlist, auth settings).
+   Everything is safe to re-run.
 
 ## Step 3 — Point the app at Supabase
 
@@ -71,17 +81,17 @@ client bundle at build time**. Changing them in Vercel needs a redeploy.
 
 ---
 
-## Optional passphrase gate
+## Access
 
-Set `VITE_APP_PASSPHRASE` to put a passphrase screen in front of the app.
+With Supabase configured, the app asks for an email and sends a magic link
+(Supabase Auth). Only accounts that already exist can sign in, and the
+database only shows data to confirmed emails listed in `app_members`
+(row-level security on every table). The publishable key in the bundle can
+do nothing else. TVs get a read-only link instead (Family board → TV
+screens). Details are in [MIGRATION_NOTES.md](MIGRATION_NOTES.md).
 
-Be clear-eyed about what this is: it hides the dashboard from someone who picks
-up your unlocked laptop. It is **not** security. The passphrase and the anon key
-are both in the JavaScript bundle, so anyone determined can read the data
-directly. For a single-user personal dashboard that trade-off is usually fine —
-just don't put anything in here you'd mind a stranger reading. If that changes,
-the fix is Supabase Auth plus RLS policies keyed to `auth.uid()`, replacing the
-blanket policies at the bottom of `schema.sql`.
+`VITE_APP_PASSPHRASE` still puts a passphrase screen in front of the
+local-only (no Supabase) mode. It's a curtain, not security.
 
 ---
 
@@ -148,7 +158,15 @@ src/
     FamilyTree.jsx  the people tree
     PersonPanel.jsx per-person goals and chats
     MealPlanner.jsx Meals tab: renders meals.js; grocery ticks in localStorage
+    board/          the family board: FamilyBoard (/board), TvBoard + TvPage (/tv),
+                    ReviewPanel (weekly review remote), DeviceLinks (TV links)
+  lib/tz.js         America/Chicago dates; all-day events stay dates
+  lib/board.js      shared board logic (members, week, clashes, goals, actions)
+  lib/boardData.js  member / TV-device / demo data sources
+  lib/auth.js       magic-link sign-in + allowlist check
+scripts/sync-box/   box SQLite → Supabase sync (docs/BOX_SYNC.md)
 supabase/schema.sql
+supabase/migrations/
 ```
 
 ## Offline behaviour

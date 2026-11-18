@@ -299,7 +299,8 @@ export function deleteNote(id) {
 }
 
 // ── TO-DO LIST ───────────────────────────────────────────────────────
-export const todosSorted = (s) => [...(s.todos || [])].sort(bySort)
+// Archived to-dos (soft-deleted, e.g. removed on the box) are hidden everywhere.
+export const todosSorted = (s) => (s.todos || []).filter((t) => !t.archived_at).sort(bySort)
 
 export function addTodo(text) {
   const row = {
@@ -326,17 +327,28 @@ export function updateTodo(id, text) {
   persist(() => backend.update('todos', id, { text }))
 }
 
+// To-dos synced from the box are archived rather than deleted: a deleted
+// row would come straight back on the next sync.
+function dropTodo(t) {
+  if (t.source === 'box') return backend.update('todos', t.id, { archived_at: new Date().toISOString() })
+  return backend.remove('todos', t.id)
+}
+
 export function deleteTodo(id) {
+  const t = state.todos.find((x) => x.id === id)
+  if (!t) return
   state.todos = state.todos.filter((x) => x.id !== id)
   emit()
-  persist(() => backend.remove('todos', id))
+  persist(() => dropTodo(t))
 }
 
 export function clearDoneTodos() {
-  const doomed = state.todos.filter((t) => t.done)
+  const doomed = state.todos.filter((t) => t.done && !t.archived_at)
   state.todos = state.todos.filter((t) => !t.done)
   emit()
-  persist(() => removeAll(doomed.map((t) => ['todos', t.id])))
+  persist(async () => {
+    for (const t of doomed) await dropTodo(t).catch(() => {})
+  })
 }
 
 // ── HABITS: DAILY, WEEKLY, MONTHLY ───────────────────────────────────

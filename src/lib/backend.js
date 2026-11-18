@@ -75,11 +75,18 @@ function localBackend() {
 }
 
 // ── SUPABASE ─────────────────────────────────────────────────────────
-function supabaseBackend() {
-  const sb = createClient(URL, KEY, {
-    auth: { persistSession: false },
+// The publishable key only gets you as far as signing in: every table is
+// RLS-protected and readable only by allowlisted family members (see
+// supabase/migrations). The session persists so phones stay signed in.
+export const supabase = hasSupabase
+  ? createClient(URL, KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'fb-auth' },
     realtime: { params: { eventsPerSecond: 5 } },
   })
+  : null
+
+function supabaseBackend() {
+  const sb = supabase
 
   return {
     kind: 'supabase',
