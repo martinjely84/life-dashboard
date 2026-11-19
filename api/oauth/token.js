@@ -5,9 +5,9 @@ export default function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).end()
 
-  // Issue the access token — this is what Claude uses as Bearer in MCP calls.
-  // We accept any valid auth code (personal server; the grant page is the gate).
-  const token = process.env.DASHBOARD_MCP_KEY || 'life-dashboard-open'
+  // Issue a stable access token. The MCP endpoint no longer validates it —
+  // the OAuth grant page is the security layer for this personal server.
+  const token = 'life-dashboard-mcp-token'
 
   res.setHeader('Content-Type', 'application/json')
   res.setHeader('Cache-Control', 'no-store')

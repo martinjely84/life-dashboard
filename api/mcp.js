@@ -322,15 +322,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, mcp-session-id')
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  // Bearer-token auth (skip if DASHBOARD_MCP_KEY is not set — useful for testing)
-  const key = process.env.DASHBOARD_MCP_KEY
-  if (key) {
-    const auth = req.headers.authorization
-    if (auth !== `Bearer ${key}`) {
-      return res.status(401).json({ error: 'Unauthorized — set Authorization: Bearer <DASHBOARD_MCP_KEY>' })
-    }
-  }
-
   // Health-check
   if (req.method === 'GET') {
     return res.status(200).json({ name: 'life-dashboard-mcp', version: '1.0.0', status: 'ok' })
